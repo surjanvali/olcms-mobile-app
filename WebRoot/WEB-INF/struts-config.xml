@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://struts.apache.org/dtds/struts-config_1_2.dtd">
+
+<struts-config>
+	<data-sources>
+		<data-source key="dbsource" type="org.apache.commons.dbcp.BasicDataSource">
+			<set-property property="driverClassName"
+				value="org.postgresql.Driver" />
+			<!-- <set-property property="url"
+				value="jdbc:postgresql://10.96.54.54:6432/apolcms" />
+			<set-property property="username" value="apolcms" />
+			<set-property property="password" value="@p0l(m$" /> -->
+
+			<!-- Test -->
+			<!-- <set-property property="url" value="jdbc:postgresql://172.16.98.2:9432/apolcms" /> 
+				<set-property property="username" value="apolcms" /> 
+				<set-property property="password" value="apolcms" /> -->
+
+			<!-- LOCAL -->
+			<set-property property="url"
+				value="jdbc:postgresql://localhost/apolcms" />
+			<set-property property="username" value="apolcms" />
+			<set-property property="password" value="apolcms" />
+
+
+			<set-property property="minCount" value="5" />
+			<set-property property="maxCount" value="200" />
+
+			<set-property property="maxActive" value="200" />
+
+			<set-property property="maxWait" value="30000" />
+
+			<set-property property="maxIdle" value="30" />
+
+			<set-property property="LogAbandoned" value="true" />
+
+			<set-property property="removeAbandoned" value="true" />
+			<set-property property="removeAbandonedTimeout"
+				value="60" />
+
+			<set-property property="timeBetweenEvictionRunsMillis"
+				value="15000" />
+			<set-property property="minEvictableIdleTimeMillis"
+				value="60000" />
+
+			<set-property property="testWhileIdle" value="true" />
+
+			<set-property property="numTestsPerEvictionRun"
+				value="5" />
+			<set-property property="whenExhaustedAction" value="2" />
+			<set-property property="defaultAutoCommit" value="true" />
+			<set-property property="defaultReadOnly" value="false" />
+
+		</data-source>
+	</data-sources>
+
+	<form-beans />
+	<global-exceptions />
+	<global-forwards />
+	<action-mappings />
+
+
+	<message-resources
+		parameter="in.gov.struts.ApplicationResources" />
+	<plug-in className="plugins.DatabasePlugin"></plug-in>
+</struts-config>
