@@ -38,7 +38,6 @@ public class MenuService {
 	public static Response viewMenu(String incomingData) throws Exception {
 		Connection con = null;
 		String jsonStr = "",sql="";PreparedStatement ps = null;ResultSet rs = null;
-		JSONObject responseString = new JSONObject();
 		try {
 			if (incomingData != null && !incomingData.toString().trim().equals("")) {
 				JSONObject jObject1 = new JSONObject(incomingData);
@@ -65,9 +64,9 @@ public class MenuService {
 					if(roleId!=null && !roleId.equals("")){
 					
 					/* START - Code for displaying custom services menu based on role */
-					sql = "SELECT service_name,target,show_icon as icon,has_childs as has_child,parent_id,a.service_id,display_id FROM services a inner join role_services b on (a.service_id=b.service_id) where b.role_id=?  "
+					sql = "SELECT service_name,target,show_icon as icon,has_childs as has_child,parent_id,a.service_id,display_id FROM services_mobile a inner join role_services_mobile b on (a.service_id=b.service_id) where b.role_id=?  "
 							+ " " + " union "
-							+ " SELECT service_name,target,show_icon as icon,has_childs as has_child,parent_id,a1.service_id,display_id FROM services a1 inner join user_services b1 on (a1.service_id=b1.service_id) where b1.user_id=? "
+							+ " SELECT service_name,target,show_icon as icon,has_childs as has_child,parent_id,a1.service_id,display_id FROM services_mobile a1 inner join user_services_mobile b1 on (a1.service_id=b1.service_id) where b1.user_id=? "
 							+ " " + " order by 7,5,6";
 
 					System.out.println("Display Left hand menu sql ............ " + sql);
@@ -103,7 +102,6 @@ public class MenuService {
 									if (map.get("service_id").equals(innerMap.get("parent_id"))) {
 										// System.out.println("--" + innerMap.get("service_name"));
 										childMenu.put("childMenu", innerMap.get("service_name"));
-										childMenu.put("target", innerMap.get("target"));
 										childMenuList.add(childMenu);
 									}
 								}
@@ -112,7 +110,6 @@ public class MenuService {
 							} else if (map.get("parent_id").equals(0) && map.get("has_child").equals(false)) {
 								// System.out.println(map.get("service_name"));
 								parentMenu.put("parentMenu", map.get("service_name"));
-								parentMenu.put("target", map.get("target"));
 
 							}
 							if (parentMenu.length() > 0)
@@ -121,7 +118,8 @@ public class MenuService {
 						}
 
 						System.out.println(menuList.toString());
-						responseString.put("response", menuList.toString());
+						//responseString.put("response", menuList.toString());
+						jsonStr = "{\"RESPONSE\" : " + menuList.toString() + "}";
 					}
 					
 					/* END - Code for displaying custom services menu based on role */
@@ -144,6 +142,6 @@ public class MenuService {
 			if (con != null)
 				con.close();
 		}
-		return Response.status(200).entity(responseString.toString()).build();
+		return Response.status(200).entity(jsonStr).build();
 	}
 }
