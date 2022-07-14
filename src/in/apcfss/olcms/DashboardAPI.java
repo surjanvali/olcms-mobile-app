@@ -303,7 +303,7 @@ public class DashboardAPI {
 								+ "\", \"RSPCODE\": \"01\",\"RSPDESC\": \"SUCCESS\"}";
 								//+"\" },"; 
 					
-						jsonStr = jsonStr.substring(0,jsonStr.length() - 1); 
+						//jsonStr = jsonStr.substring(0,jsonStr.length() - 1); 
 					jsonStr += "}";
 
 					System.out.println("jsonStr--"+jsonStr);
