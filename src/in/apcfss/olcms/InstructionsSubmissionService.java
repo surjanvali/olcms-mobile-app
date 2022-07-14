@@ -23,7 +23,7 @@ import plugins.DatabasePlugin;
  *        PRD URL :
  *        https://aprcrp.apcfss.in/apolcms-services/services/instructions/submitInstructions
  *        TEST URL :
-	 *        http://localhost:9090/apolcms-services/services/instructions/submitInstructions
+	 *        http://localhost:8080/apolcms-services/services/instructions/submitInstructions
 	 * 
  *        {"REQUEST" : {"CINO":"APHC010191782022","USERID":"RAMESH.DAMMU@APCT.GOV.IN", "INSTRUCTIONS":"Instructions will be submitted", "ROLE_ID":"5", "DEPT_CODE":"REV03", "DIST_ID":"0"}}
 		  {"RESPONSE" : {"TOTAL":"","ASSIGNMENT_PENDING":"", "APPROVAL_PENDING":"","CLOSED":"","NEWCASES":"", "FINAL_ORDERS":"", "INTERIM_CASES":"", "INTERIM_ORDERS":""}}		
@@ -37,9 +37,8 @@ public class InstructionsSubmissionService {
 	@Path("/submitInstructions")
 	public static Response submitInstructions(String incomingData) throws Exception {
 		Connection con = null;
-		String jsonStr = "",sql="";PreparedStatement ps = null;ResultSet rs = null;
-		JSONObject responseString = new JSONObject();
-		String userId=null;int a=0;String uploadedFilePath=null;
+		String jsonStr = "",sql="";PreparedStatement ps = null;
+		int a=0;String uploadedFilePath=null;
 		JSONObject userDetails = new JSONObject();
 		try {
 			if (incomingData != null && !incomingData.toString().trim().equals("")) {
@@ -52,20 +51,21 @@ public class InstructionsSubmissionService {
 					System.out.println("jObject:" + jObject);
 					
 					if(!jObject.has("CINO") || jObject.get("CINO").toString().equals("")) {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Cino.\" }}";
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- CINO is missing in the request.\" }}";
 					}
 					else if(!jObject.has("INSTRUCTIONS") || jObject.get("INSTRUCTIONS").toString().equals("")) {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Instructions.\" }}";
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- INSTRUCTIONS is missing in the request.\" }}";
 					}
 					else if(!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Dept Code.\" }}";
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
 					}
 					else if(!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid District Id.\" }}";
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- DIST_ID is missing in the request.\" }}";
 					}
 					else if(!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid User Id.\" }}";
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
 					}
+					else {
 
 					String cino=jObject.get("CINO").toString();
 					String instructions=jObject.get("INSTRUCTIONS").toString();
@@ -109,7 +109,7 @@ public class InstructionsSubmissionService {
 							
 						}
 						jsonStr = "{\"RESPONSE\" : "+userDetails.toString()+"}";
-
+					}
 					} 
 				} else {
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\", \"RSPDESC\" :\"Invalid Data Format.\"}}";

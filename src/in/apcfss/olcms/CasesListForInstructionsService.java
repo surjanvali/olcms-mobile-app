@@ -25,7 +25,7 @@ import plugins.DatabasePlugin;
  * @title :
  * 
  *        PRD URL :
- *        https://aprcrp.apcfss.in/apolcms-services/services/getCasesList/displayCaseFilters
+ *        https://apolcms.ap.gov.in/apolcms-services/services/getCasesList/displayCaseFilters
  *        TEST URL :
  *        http://localhost:9090/apolcms-services/services/getCasesList/displayCaseFilters
  * 
@@ -142,9 +142,9 @@ public class CasesListForInstructionsService {
 	 * @title :
 	 * @Description : This method retrives the case details from the Ecourts API call for the corresponding cino.
 	 *        PRD URL :
-	 *        https://apolcms.ap.gov.in/apolcms-services/services/getCasesList/viewCaseDetails
+	 *        https://apolcms.ap.gov.in/apolcms-services/services/getCasesList/viewSelectedCaseDetails
 	 *        TEST URL :
-	 *        http://localhost:9090/apolcms-services/services/getCasesList/viewCaseDetails
+	 *        http://localhost:9090/apolcms-services/services/getCasesList/viewSelectedCaseDetails
 	 * 
 	 *        {"REQUEST" : {"CINO":"APHC010149352022"}} 
 	 *        
@@ -243,11 +243,4 @@ public class CasesListForInstructionsService {
 	}
 	
 }
-	
-
-	
-	
-	
-	
-
 	
