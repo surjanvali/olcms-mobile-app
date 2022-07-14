@@ -1,12 +1,7 @@
 package in.apcfss.olcms;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Map;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -20,13 +15,12 @@ import plugins.DatabasePlugin;
  * @author : Bhanu Krishna Kota
  * @title :
  * 
- *        PRD URL :
- *        https://aprcrp.apcfss.in/apolcms-services/services/instructions/submitInstructions
- *        TEST URL :
-	 *        http://localhost:8080/apolcms-services/services/instructions/submitInstructions
-	 * 
- *        {"REQUEST" : {"CINO":"APHC010191782022","USERID":"RAMESH.DAMMU@APCT.GOV.IN", "INSTRUCTIONS":"Instructions will be submitted", "ROLE_ID":"5", "DEPT_CODE":"REV03", "DIST_ID":"0"}}
-		  {"RESPONSE" : {"TOTAL":"","ASSIGNMENT_PENDING":"", "APPROVAL_PENDING":"","CLOSED":"","NEWCASES":"", "FINAL_ORDERS":"", "INTERIM_CASES":"", "INTERIM_ORDERS":""}}		
+ *        PRD URL : https://aprcrp.apcfss.in/apolcms-services/services/instructions/submitInstructions
+ *        TEST URL :http://localhost:8080/apolcms-services/services/instructions/submitInstructions
+ * 
+ *        {"REQUEST" : {"CINO":"APHC010191782022","USER_ID":"RAMESH.DAMMU@APCT.GOV.IN", "INSTRUCTIONS":"Instructions will be submitted", "ROLE_ID":"5", "DEPT_CODE":"REV03", "DIST_ID":"0"}}
+ *		  {"RESPONSE": {"RSPCODE": "01","RSPDESC": "INSTRUCTIONS SAVED SUCCESSFULLY"  }
+ *	
  **/
 
 @Path("/instructions")
