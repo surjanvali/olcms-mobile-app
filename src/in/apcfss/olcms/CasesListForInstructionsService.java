@@ -4,7 +4,9 @@ import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -224,6 +226,119 @@ public class CasesListForInstructionsService {
 							e.printStackTrace();
 						}
 					}
+
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/displayCases")
+	public static Response displayCasesList(String incomingData) throws Exception {
+
+		String request_token = "", requeststring = "";
+		String inputStr = "", targetURL = "";
+		String authToken = "";
+		Connection con = null;
+		String jsonStr = "";
+
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				}  else {
+					String sql = null, sqlCondition = "", roleId="", distId="", deptCode="", userid="";
+					userid = jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					con = DatabasePlugin.connect();
+					
+
+					if(!roleId.equals("2")) { //District Nodal Officer
+						sqlCondition +=" and dept_code='" + deptCode + "' ";
+					}
+
+					if(roleId.equals("2") || roleId.equals("12")) { //District Collector
+
+						sqlCondition +="  and dist_id='"+distId+"'";//and case_status=7
+					}
+					else if(roleId.equals("10")) { //District Nodal Officer
+						sqlCondition +=" and dist_id='"+distId+"'";// and case_status=8
+					}
+					else if(roleId.equals("5") || roleId.equals("9")) {//NO & HOD
+						//sqlCondition +=" and case_status in (3,4)";
+					}
+					else if(roleId.equals("3") || roleId.equals("4")) {//MLO & Sect. Dept.
+						//sqlCondition +=" and (case_status is null or case_status in (1, 2))";
+					}
+					else if(roleId.equals("8") || roleId.equals("11") || roleId.equals("12")) {
+						sqlCondition +="  and assigned_to='"+userid+"'";
+					}
+
+					
+					sql= " select a.* from ecourts_case_data a where coalesce(ecourts_case_status,'')!='Closed' "+sqlCondition+" order by 1";
+
+					System.out.println("ecourts SQL:" + sql);
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+					
+					JSONArray finalList = new JSONArray();
+					// System.out.println("data=" + data);
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+					
+						for (Map<String, Object> entry : data) {		
+						    
+						    	JSONObject cases = new JSONObject();
+						    	cases.put("cino", entry.get("cino").toString());
+						    	cases.put("date_of_filing", entry.get("date_of_filing").toString());						    	
+						    	cases.put("type_name_fil", entry.get("type_name_fil").toString());
+						    	cases.put("reg_no", entry.get("reg_no").toString());
+						    	cases.put("reg_year", entry.get("reg_year").toString());
+						    	cases.put("pet_name", entry.get("pet_name").toString());
+						    	cases.put("dist_name", entry.get("dist_name").toString());
+						    	cases.put("purpose_name", entry.get("purpose_name").toString());
+						    	cases.put("res_name", entry.get("res_name").toString());
+						    	cases.put("pet_adv", entry.get("pet_adv").toString());
+						    	cases.put("res_adv", entry.get("res_adv").toString());
+						    	finalList.put(cases);
+						}
+						JSONObject casesData = new JSONObject();
+						casesData.put("CASES_DATA", finalList);
+						String finalString = casesData.toString();
+						    
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"OK\"  , \"RSPDESC\" :\"Cases retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+						
+					} else {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\" }}";
+					}				
 
 				}
 			} else {
