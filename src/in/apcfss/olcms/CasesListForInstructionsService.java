@@ -282,6 +282,37 @@ public class CasesListForInstructionsService {
 					distId = jObject.get("DIST_ID").toString();
 					con = DatabasePlugin.connect();
 					
+					
+					if (jObject.has("DOF_FROM_DATE") &&  jObject.get("DOF_FROM_DATE")!= null && !jObject.get("DOF_FROM_DATE").toString().equals("")) {
+						sqlCondition += " and date_of_filing >= to_date('" + jObject.get("DOF_FROM_DATE").toString() + "','dd-mm-yyyy') ";
+					}
+					if (jObject.has("DOF_TO_DATE") &&  jObject.get("DOF_TO_DATE")!= null && !jObject.get("DOF_TO_DATE").toString().equals("")) {
+						sqlCondition += " and date_of_filing <= to_date('" + jObject.get("DOF_TO_DATE").toString() + "','dd-mm-yyyy') ";
+					}
+					if (jObject.has("PURPOSE") &&  jObject.get("PURPOSE")!= null && !jObject.get("PURPOSE").toString().equals("")) {
+						sqlCondition += " and trim(purpose_name)='" + jObject.get("PURPOSE").toString() + "' ";
+					}
+					if (jObject.has("DISTRICT_NAME") && jObject.get("DISTRICT_NAME") != null
+							&& !jObject.get("DISTRICT_NAME").toString().equals("")
+							&& !jObject.get("DISTRICT_NAME").toString().equals("0")) {
+						sqlCondition += " and trim(dist_name)='" + jObject.get("DISTRICT_NAME").toString().trim()
+								+ "' ";
+					}
+
+
+					if(jObject.has("REG_YEAR") && jObject.get("REG_YEAR") != null
+							&& !jObject.get("REG_YEAR").toString().equals("")
+							&& jObject.get("REG_YEAR").toString().equals("default")) {
+						sqlCondition += " and reg_year in ('2021','2022') ";
+						
+					}
+					else if (jObject.has("REG_YEAR") && jObject.get("REG_YEAR") != null
+							&& !jObject.get("REG_YEAR").toString().equals("")
+							&& !jObject.get("REG_YEAR").toString().equals("ALL")
+							&& !jObject.get("REG_YEAR").toString().equals("0")) {
+						sqlCondition += " and reg_year='" + jObject.get("REG_YEAR").toString() + "' ";
+					}
+
 
 					if(!roleId.equals("2")) { //District Nodal Officer
 						sqlCondition +=" and dept_code='" + deptCode + "' ";
@@ -307,7 +338,7 @@ public class CasesListForInstructionsService {
 					
 					sql= " select a.* from ecourts_case_data a where coalesce(ecourts_case_status,'')!='Closed' "+sqlCondition+" order by 1";
 
-					System.out.println("ecourts SQL:" + sql);
+					System.out.println("Final SQL:" + sql);
 					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
 					
 					JSONArray finalList = new JSONArray();
