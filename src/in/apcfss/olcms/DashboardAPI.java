@@ -831,4 +831,99 @@ public class DashboardAPI {
 		}
 		return Response.status(200).entity(jsonStr).build();
 	}
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/getYearWiseCases")
+	public static Response getYearWiseCases(String incomingData) throws Exception {
+
+		Connection con = null;
+		String jsonStr = "";
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("YEAR") || jObject.isNull("YEAR") || jObject.get("YEAR").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- YEAR is missing in the request.\" }}";
+				}
+				else if (!jObject.has("USER_ID") || jObject.isNull("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				}  
+				else {
+					
+					String sql = null, userid="", year="";
+					
+					year=jObject.get("YEAR").toString();
+					userid=jObject.get("USER_ID").toString();
+					con = DatabasePlugin.connect();
+										
+					
+					sql = "select type_name_reg,reg_no,reg_year, to_char(dt_regis,'dd-mm-yyyy') as dt_regis, cino from ecourts_case_data a "
+							+ " inner join dept_new d on (a.dept_code=d.dept_code)   inner join ecourts_mst_gp_dept_map e on (a.dept_code=e.dept_code) "
+							+ " where reg_year > 0 and d.display = true  and e.gp_id='"+userid+"' ";
+					
+					if(!year.equals(""))
+						sql+="and reg_year='"+year+"' ";
+					
+					sql	+= "order by reg_year,type_name_reg,reg_no";
+					
+
+					System.out.println("SQL:" + sql);
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);					
+					
+					JSONArray finalList = new JSONArray();
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+						
+						for (Map<String, Object> entry : data) {		
+						    
+							JSONObject cases = new JSONObject();
+					    	cases.put("case_type", entry.get("type_name_reg").toString());
+					    	String caseno = entry.get("type_name_reg").toString()+" "+entry.get("reg_no").toString()+"/"+entry.get("reg_year").toString();
+					    	cases.put("case_no", caseno);						    	
+					    	cases.put("case_reg_date", entry.get("dt_regis").toString());
+					    	cases.put("status", "Pending");
+					    	cases.put("cino", entry.get("cino").toString());
+					    	finalList.put(cases);
+						}
+						JSONObject casesData = new JSONObject();
+						casesData.put("SELECTED_YEAR", year);
+						casesData.put("CASES_LIST", finalList);						
+						String finalString = casesData.toString();
+						    
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+													
+						} else {
+							JSONObject casesData = new JSONObject();
+							casesData.put("SELECTED_YEAR", year);
+							casesData.put("CASES_LIST", finalList);							
+							String finalString = casesData.toString();
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
+						}					
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
 }
