@@ -10,6 +10,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import plugins.DatabasePlugin;
@@ -67,6 +68,7 @@ public class DashboardAPI {
 					String  disposed_value="0",allowed_value="0",dismissed_value="0",withdrawn_value="0",closed_value="0",returned_value="0",assigned_value="0",counterfilecount_value="0",parawisecount_value="0";
 					String str1="0",str2="0";
 					String dailyStatusbyGP = "0", assigned_new_cases_value = "0",instruction_count ="0",totaldeptcases = "0";
+					String yearWiseData = "\"GP_YEAR_WISECOUNT\" : 0";
 					if(roleId!=null && !roleId.equals("")){
 						
 						if(roleId.equals("1") || roleId.equals("7")) { // ADMIN LOGIN
@@ -650,7 +652,22 @@ public class DashboardAPI {
 									+ "group by reg_year order by reg_year desc";
 							System.out.println("YEARLY COUNT SQL:"+sql);
 							//TO BE DONE request.setAttribute("YEARWISECASES", DatabasePlugin.executeQuery(con, sql));
+							List<Map<Object, Integer>> yearWiseCounts = DatabasePlugin.executeQuery(con, sql);
+							JSONArray finalList = new JSONArray();
+							JSONObject casesData = new JSONObject();
 							
+							if (yearWiseCounts != null && !yearWiseCounts.isEmpty() && yearWiseCounts.size() > 0) {								
+								for (Map<Object, Integer> map : yearWiseCounts) {									
+								    	JSONObject cases = new JSONObject();
+								    	cases.put("reg_year",map.get("reg_year").toString());
+								    	cases.put("cases_count", map.get("casescount"));								    	
+								    	finalList.put(cases);
+									
+								}
+								casesData.put("GP_YEAR_WISE_COUNTS", finalList);
+								yearWiseData = casesData.toString().substring(1,casesData.toString().length()-1);
+								
+								}
 							
 							  sql="select count(distinct a.cino) from ecourts_dept_instructions a where a.dept_code in (select dept_code from ecourts_mst_gp_dept_map where gp_id='"+userid+"')";
 							  System.out.println("instruction SQL:"+sql);
@@ -788,8 +805,8 @@ public class DashboardAPI {
 								+ closed_value + "\" ," + " \"RETURNED\":\"" + returned_value + "\" ,\"ASSIGNED\":\""
 								+ assigned_value + "\"  ,\"APPROVAL_PENDING\":\"" + approval_pending_value + "\" , \"INSTRUCTION_COUNT\":\""
 								+ instruction_count + "\" ,\"DAILY_STATUS_BY_GP\":\"" + dailyStatusbyGP + "\" , \"COUNTERFILECOUNT\":\""
-								+ counterfilecount_value + "\"  ,\"PARAWISECOUNT\":\"" + parawisecount_value
-								+ "\", \"RSPCODE\": \"01\",\"RSPDESC\": \"SUCCESS\"}";
+								+ counterfilecount_value + "\"  ,\"PARAWISECOUNT\":\"" + parawisecount_value+"\","+yearWiseData
+								+ ", \"RSPCODE\": \"01\",\"RSPDESC\": \"SUCCESS\"}";
 						// +"\" },";
 					
 						//jsonStr = jsonStr.substring(0,jsonStr.length() - 1); 
