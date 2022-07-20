@@ -105,7 +105,10 @@ public class InstructionsStatusForGP {
 					
 						
 					} else {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\" }}";
+						JSONObject casesData = new JSONObject();
+						casesData.put("CASES_LIST", finalList);
+						String finalString = casesData.toString();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
 					}				
 
 				}
@@ -254,7 +257,10 @@ public class InstructionsStatusForGP {
 						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Daily Status history retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
 						
 					} else {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\" }}";
+						JSONObject casesData = new JSONObject();
+						casesData.put("DAILY_STATUS_HISTORY", finalList);
+						String finalString = casesData.toString();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+ " }}";
 					}
 					
 					
