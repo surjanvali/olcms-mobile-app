@@ -179,7 +179,7 @@ public class InstructionsStatusForGP {
 					ps.setString(i, cino);
 					ps.setString(++i, daily_status != null ? daily_status : "");
 					ps.setString(++i, deptCode);
-					ps.setString(++i, distId);
+					ps.setInt(++i, Integer.parseInt(distId));
 					ps.setString(++i, userid);
 
 					System.out.println("sql--"+sql);
