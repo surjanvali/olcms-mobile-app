@@ -926,4 +926,129 @@ public class DashboardAPI {
 
 	}
 	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/viewRecentActivities")
+	public static Response viewRecentActivities(String incomingData) throws Exception {
+
+		Connection con = null;
+		String jsonStr = "";
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if(!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				}
+				else if(!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				}
+				else if(!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				}
+				else if(!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} 
+				else {
+					
+					String sql = null, userid="", year="",roleId="",distId="",deptCode="";
+					
+					
+					userid=jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					distId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					con = DatabasePlugin.connect();
+										
+					
+					sql = "select cino, action_type, inserted_by, to_char(inserted_on,'dd-mm-yyyy hh:MM:ss') as inserted_time , assigned_to, remarks, coalesce(uploaded_doc_path,'-') as uploaded_doc_path, dist_id , dn.dept_code||' - '||dn.description as deptdesc,"
+							+ " nd.fullname_en,nd.post_name_en , dm.district_name " + "from ecourts_case_activities ca "
+							+ "left join (select distinct employee_id,fullname_en,post_name_en from nic_data) nd on (ca.assigned_to=employee_id) "
+							+ "left join dept_new dn on (ca.assigned_to=dn.dept_code) "
+							+ "left join district_mst dm on (ca.dist_id=dm.district_id) " + "where inserted_by='" + userid
+							+ "' and cino is not null and cino!='null' order by inserted_on desc limit 10";
+					
+					System.out.println("RECENT ACTIVITY SQL:" + sql);
+					
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);					
+					
+					JSONArray finalList = new JSONArray();
+					String assignedTo = "";
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+						
+						for (Map<String, Object> entry : data) {		
+						    
+							JSONObject cases = new JSONObject();
+					    	cases.put("CINO", entry.get("cino").toString());
+					    	
+					    	cases.put("ACTIVITY", entry.get("action_type").toString());
+					    	
+					    	if(entry.get("uploaded_doc_path")!=null && entry.get("uploaded_doc_path").toString().equals("-")) {
+					    		if (entry.get("deptdesc")!=null && !entry.get("deptdesc").toString().trim().equals("")) {
+					    			assignedTo = entry.get("deptdesc").toString();					    			
+					    		}
+					    		
+					    		if (entry.get("fullname_en")!=null && !entry.get("fullname_en").toString().trim().equals("")) {
+					    			assignedTo = assignedTo + " " +entry.get("fullname_en").toString();					    			
+					    		}
+					    		
+					    		if (entry.get("post_name_en")!=null && !entry.get("post_name_en").toString().trim().equals("")) {
+					    			assignedTo = assignedTo + " " +entry.get("post_name_en").toString();					    			
+					    		}
+					    		
+								try {
+									if (entry.get("dist_id") != null && !entry.get("dist_id").toString().trim().equals("")
+											&& Integer.parseInt(entry.get("dist_id").toString()) > 0) {
+										assignedTo = assignedTo + " " + entry.get("district_name").toString();
+									}
+								} catch (NumberFormatException e) {
+									assignedTo = assignedTo;
+								}
+					    	}
+					    	cases.put("ASSIGNED_TO", assignedTo);
+					    	cases.put("TIME", entry.get("inserted_time").toString());
+					    	
+					    	finalList.put(cases);
+						}
+						JSONObject casesData = new JSONObject();
+						casesData.put("RECENT_ACTIVITIES_LIST", finalList);						
+						String finalString = casesData.toString();
+						    
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+													
+						} else {
+							JSONObject casesData = new JSONObject();
+							casesData.put("RECENT_ACTIVITIES_LIST", finalList);							
+							String finalString = casesData.toString();
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
+						}					
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	
+	
 }
