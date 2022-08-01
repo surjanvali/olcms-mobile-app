@@ -483,7 +483,7 @@ public class InstructionsStatusForGP {
 								obj.put("UPDATED_BY",entry.get("inserted_by") !=null ? entry.get("inserted_by").toString() :"");
 								obj.put("ASSIGNED_TO",entry.get("assigned_to") !=null ? entry.get("assigned_to").toString() :"");
 								obj.put("REMARKS",entry.get("remarks") !=null ? entry.get("remarks").toString() :"");
-								obj.put("DOCUMENT_PATH",entry.get("uploaded_doc_path") !=null ? entry.get("uploaded_doc_path").toString() :"");
+								obj.put("DOCUMENT_PATH",entry.get("uploaded_doc_path") !=null ? "https://apolcms.ap.gov.in/"+entry.get("uploaded_doc_path").toString() :"");
 
 								pwrArray.put(obj);
 							}
@@ -495,7 +495,7 @@ public class InstructionsStatusForGP {
 								obj.put("UPDATED_BY",entry.get("inserted_by") !=null ? entry.get("inserted_by").toString() :"");
 								obj.put("ASSIGNED_TO",entry.get("assigned_to") !=null ? entry.get("assigned_to").toString() :"");
 								obj.put("REMARKS",entry.get("remarks") !=null ? entry.get("remarks").toString() :"");
-								obj.put("DOCUMENT_PATH",entry.get("uploaded_doc_path") !=null ? entry.get("uploaded_doc_path").toString() :"");
+								obj.put("DOCUMENT_PATH",entry.get("uploaded_doc_path") !=null ? "https://apolcms.ap.gov.in/"+entry.get("uploaded_doc_path").toString() :"");
 								counterArray.put(obj);
 							}
 						}
