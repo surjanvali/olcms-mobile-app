@@ -605,7 +605,7 @@ public class InstructionsStatusForGP {
 							obj.put("UPDATED_BY",entry.get("inserted_by") !=null ? entry.get("inserted_by").toString() :"");
 							obj.put("ASSIGNED_TO",entry.get("assigned_to") !=null ? entry.get("assigned_to").toString() :"");
 							obj.put("REMARKS",entry.get("remarks") !=null ? entry.get("remarks").toString() :"");
-							obj.put("DOCUMENT_PATH",entry.get("uploaded_doc_path") !=null && !entry.get("uploaded_doc_path").toString().equals("-")? entry.get("uploaded_doc_path").toString() :"");
+							obj.put("DOCUMENT_PATH",entry.get("uploaded_doc_path") !=null && !entry.get("uploaded_doc_path").toString().equals("-")? "https://apolcms.ap.gov.in/"+entry.get("uploaded_doc_path").toString() :"");
 							
 							caseActivitiesArray.put(obj);
 						}
@@ -627,7 +627,7 @@ public class InstructionsStatusForGP {
 							obj.put("ORDER_DATE",entry.get("order_date") !=null ? entry.get("order_date").toString() :"");
 							obj.put("ORDER_DETAILS",entry.get("order_details") !=null ? entry.get("order_details").toString() :"");
 							obj.put("ORDER_DOCUMENT_NAME",entry.get("order_document_path") !=null && !entry.get("order_document_path").toString().equals("-")? entry.get("order_details").toString() +"-"+ entry.get("order_no").toString():"");
-							
+							obj.put("ORDER_DOCUMENT_PATH", entry.get("order_document_path") !=null && !entry.get("order_document_path").toString().equals("-")? "https://apolcms.ap.gov.in/"+entry.get("order_document_path").toString():"");
 							
 							finalOrdersArray.put(obj);
 						}
