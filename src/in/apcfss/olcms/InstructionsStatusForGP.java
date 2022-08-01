@@ -518,7 +518,7 @@ public class InstructionsStatusForGP {
 							obj.put("ORDER_DATE",entry.get("order_date") !=null ? entry.get("order_date").toString() :"");
 							obj.put("ORDER_DETAILS",entry.get("order_details") !=null ? entry.get("order_details").toString() :"");
 							obj.put("ORDER_DOCUMENT_NAME",entry.get("order_document_path") !=null && !entry.get("order_document_path").toString().equals("-")? entry.get("order_details").toString() +"-"+ entry.get("order_no").toString():"");
-							obj.put("ORDER_DOCUMENT_PATH","https://apolcms.ap.gov.in/apolcms/HighCourtsCaseOrders/"+entry.get("cino").toString()+"-interimorder-"+entry.get("order_no").toString()+".pdf");
+							obj.put("ORDER_DOCUMENT_PATH","https://apolcms.ap.gov.in/HighCourtsCaseOrders/"+entry.get("cino").toString()+"-interimorder-"+entry.get("order_no").toString()+".pdf");
 
 							interimOrderArray.put(obj);
 						}
