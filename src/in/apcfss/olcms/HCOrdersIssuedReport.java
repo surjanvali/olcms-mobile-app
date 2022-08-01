@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -12,6 +14,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -398,7 +401,7 @@ public class HCOrdersIssuedReport {
 							for (Map<String, Object> entry : data) {
 								JSONObject cases = new JSONObject();
 								cases.put("CINO", entry.get("cino").toString());
-								cases.put("SCANNED_AFFIDAVIT", entry.get("scanned_document_path"));
+								cases.put("SCANNED_AFFIDAVIT", entry.get("scanned_document_path")!=null && !entry.get("scanned_document_path").toString().trim().equals("") ? "https://apolcms.ap.gov.in/"+entry.get("scanned_document_path").toString():"");
 								cases.put("TOTAL_CASES", entry.get("date_of_filing"));
 								cases.put("CASE_REG_NO", entry.get("type_name_fil")+"/"+entry.get("reg_no")+"/"+entry.get("reg_year"));
 						    	cases.put("PRAYER", entry.get("prayer").toString());
@@ -413,8 +416,31 @@ public class HCOrdersIssuedReport {
 						    	cases.put("RESPONDENTS", entry.get("res_name")+","+entry.get("address"));
 						    	cases.put("PETITIONER_ADVOCATE", entry.get("pet_adv"));
 						    	cases.put("RESPONDENT_ADVOCATE", entry.get("res_adv"));
-						    	cases.put("ORDER_PATHS", entry.get("orderpaths"));
+						    	
+						    	JSONArray orderdocumentList = new JSONArray();
 								
+						    	
+						    	if (entry.get("orderpaths") != null)
+						    	{
+						    		String mydata = entry.get("orderpaths").toString();
+						    		Pattern pattern = Pattern.compile("(?<=a href=\".)(.*?)(?=\" target)");
+						    		Matcher matcher = pattern.matcher(mydata);
+						    		Pattern pattern2 = Pattern.compile("(?<=<span>)(.*?)(?=</span)");
+						    		Matcher matcher2 = pattern2.matcher(mydata);
+						    		
+						            while (matcher.find() && matcher2.find()){
+						            	JSONObject orderData = new JSONObject();
+						                String s = matcher.group();
+						                String s1 = matcher2.group();
+						                orderData.put("ORDER_NAME", s1);
+						                orderData.put("ORDER_DOC_PATH", "https://apolcms.ap.gov.in/"+s);
+						                
+						                orderdocumentList.put(orderData);
+						            }
+						           
+						           
+						    	}
+						    	cases.put("ORDER_PATHS", orderdocumentList);
 								finalList.put(cases);
 							}
 
