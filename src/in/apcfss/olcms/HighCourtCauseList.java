@@ -390,7 +390,7 @@ public class HighCourtCauseList {
 							cases.put("BENCH_ID", entry.get("bench_id"));
 							cases.put("JUDGE_NAME", entry.get("judge_name").toString());
 					    	cases.put("CAUSE_LIST_ID", entry.get("causelist_id").toString());
-					    	cases.put("CAUSE_LIST_TYPE", entry.get("causelist_type").toString());
+					    	cases.put("CAUSE_LIST_TYPE", entry.get("cause_list_type").toString());
 					    	cases.put("ORDER_DOC_PATH", "https://apolcms.ap.gov.in/"+entry.get("document").toString());
 					    	
 					    	finalList.put(cases);
