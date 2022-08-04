@@ -302,8 +302,25 @@ public class AcksAbstractReport {
 								cases.put("DEPARTMENTS", entry.get("dept_descs").toString());
 								cases.put("ADVOCATE_CCNO", entry.get("advocateccno").toString());
 								cases.put("ADVOCATE_NAME", entry.get("advocatename").toString());
-								cases.put("ACK_FILE_PATH", entry.get("ack_file_path"));
-								cases.put("BARCODE_FILE_PATH", entry.get("barcode_file_path"));
+								cases.put("PETITIONER_NAME", entry.get("petitioner_name"));
+								cases.put("ACK_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("ack_file_path"));
+								String scannedAffidavitPath="";
+
+								if (entry.get("ack_no") != null)
+								{
+									if (entry.get("hc_ack_no")!=null && !entry.get("hc_ack_no").equals("-")) {
+										scannedAffidavitPath = "https://apolcms.ap.gov.in/uploads/scandocs/" + entry.get("hc_ack_no")
+										+ "/" + entry.get("hc_ack_no") + ".pdf";
+									}
+									else if (entry.get("hc_ack_no")!=null && entry.get("hc_ack_no").equals("-")) {
+										scannedAffidavitPath = "https://apolcms.ap.gov.in/uploads/scandocs/" + entry.get("ack_no")
+										+ "/" + entry.get("ack_no") + ".pdf";
+									}
+								}
+								
+								cases.put("SCANNED_AFFIDAVIT_PATH", scannedAffidavitPath);
+								
+								
 								finalList.put(cases);
 							}
 
