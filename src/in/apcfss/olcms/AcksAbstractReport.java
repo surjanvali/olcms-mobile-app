@@ -134,6 +134,8 @@ public class AcksAbstractReport {
 								JSONObject cases = new JSONObject();
 								cases.put("PRIMARY_RESPONDENT", entry.get("dept_code").toString()+" - "+entry.get("description").toString());
 								cases.put("CASES_REGISTERED", entry.get("acks").toString());
+								cases.put("DEPT_CODE", entry.get("dept_code").toString());
+								
 								
 								finalList.put(cases);
 							}
