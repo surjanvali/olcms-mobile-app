@@ -769,6 +769,233 @@ public class InstructionsStatusForGP {
 
 	}
 	
+
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/viewGPStatusUpdated")	
+	public static Response viewGPStatusUpdated(String incomingData) throws Exception {
+
+		Connection con = null;
+		String jsonStr = "";
+
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				}  else {
+					String sql = null, sqlCondition = "", roleId="", distId="", deptCode="", userid="";
+					userid = jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					con = DatabasePlugin.connect();
+					
+					
+					
+					if(!roleId.equals("2")) { //District Nodal Officer
+						sqlCondition +=" and dept_code='" + deptCode + "' ";
+					}
+
+					if(roleId.equals("2") || roleId.equals("12")) { //District Collector
+
+						sqlCondition +="  and dist_id='"+distId+"'";//and case_status=7
+					}
+					else if(roleId.equals("10")) { //District Nodal Officer
+						sqlCondition +=" and dist_id='"+distId+"'";// and case_status=8
+					}
+					else if(roleId.equals("5") || roleId.equals("9")) {//NO & HOD
+						//sqlCondition +=" and case_status in (3,4)";
+					}
+					else if(roleId.equals("3") || roleId.equals("4")) {//MLO & Sect. Dept.
+						//sqlCondition +=" and (case_status is null or case_status in (1, 2))";
+					}
+					else if(roleId.equals("8") || roleId.equals("11") || roleId.equals("12")) {
+						sqlCondition +="  and assigned_to='"+userid+"'";
+					}
+
+					sql= " select a.* from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) where coalesce(ecourts_case_status,'')!='Closed' "+sqlCondition+" order by 1";
+
+					System.out.println("ecourts SQL:" + sql);
+					
+					
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+					JSONArray finalList = new JSONArray();
+						
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+						for (Map<String, Object> entry : data) {		
+						    
+					    	JSONObject cases = new JSONObject();
+					    	cases.put("CINO", entry.get("cino").toString());
+					    	cases.put("DATE_OF_FILING", entry.get("date_of_filing"));
+					    	cases.put("CASE_TYPE", entry.get("type_name_fil"));
+					    	cases.put("REG_NO", entry.get("reg_no"));					    	
+					    	cases.put("REG_YEAR", entry.get("reg_year"));
+					    	cases.put("PETITIONER_NAME", entry.get("pet_name"));
+					    	cases.put("DISTRICT", entry.get("dist_name"));
+					    	cases.put("PURPOSE", entry.get("purpose_name"));
+					    	cases.put("RESPONDENTS", entry.get("res_name"));
+					    	cases.put("PETITIONER_ADV", entry.get("pet_adv"));
+					    	cases.put("RESPONDENT_ADV", entry.get("res_adv"));
+					    	
+					    	finalList.put(cases);
+					}
+					JSONObject casesData = new JSONObject();
+					casesData.put("CASES_LIST", finalList);
+					String finalString = casesData.toString();
+					    
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+					
+						
+					} else {
+						JSONObject casesData = new JSONObject();
+						casesData.put("CASES_LIST", finalList);
+						String finalString = casesData.toString();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
+					}				
+
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/viewInstructionsAndDailyStatusHistory")	
+	public static Response viewInstructionsAndDailyStatusHistory(String incomingData) throws Exception {
+
+		Connection con = null;
+		String jsonStr = "";
+
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} else if (!jObject.has("CINO") || jObject.get("CINO").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- CINO is missing in the request.\" }}";
+				} 
+				else {
+					String sql = null, sqlCondition = "", roleId="", distId="", deptCode="", userid="",cino="";
+					userid = jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					cino = jObject.get("CINO").toString();
+					con = DatabasePlugin.connect();
+					
+					
+					sql = "select instructions, to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time from ecourts_dept_instructions where cino='" + cino + "'  order by 1 ";
+					System.out.println("INSTRUCTION HISTORY SQL -- " + sql);
+					List<Map<String, Object>> instructionsHistory = DatabasePlugin.executeQuery(sql, con);
+					
+					
+					sql = "select status_remarks, to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time from ecourts_gpo_daily_status where cino='" + cino + "'  order by 1 ";
+					System.out.println("DAILY STATUS HISTORY SQL -- " + sql);
+					List<Map<String, Object>> dailyStatusHistory = DatabasePlugin.executeQuery(sql, con);
+					
+					boolean isInstructionsAvailable=false, isDailyStatusAvailable = false;
+					
+					
+					JSONArray finalInstructionList = new JSONArray();
+						
+					if (instructionsHistory != null && !instructionsHistory.isEmpty() && instructionsHistory.size() > 0) {
+						for (Map<String, Object> entry : instructionsHistory) {		
+						    
+					    	JSONObject cases = new JSONObject();
+					    	cases.put("INSTRUCTIONS", entry.get("instructions").toString());
+					    	cases.put("SUBMITTED_ON", entry.get("insert_time"));
+					    	
+					    	finalInstructionList.put(cases);
+					}
+					
+							isInstructionsAvailable = true;
+					} 
+					
+					JSONArray finalDailyStatusList = new JSONArray();
+					if (dailyStatusHistory != null && !dailyStatusHistory.isEmpty() && dailyStatusHistory.size() > 0) {
+						for (Map<String, Object> entry : dailyStatusHistory) {		
+						    
+					    	JSONObject cases = new JSONObject();
+					    	cases.put("DAILY_STATUS", entry.get("status_remarks").toString());
+					    	cases.put("SUBMITTED_ON", entry.get("insert_time"));
+					    	
+					    	finalDailyStatusList.put(cases);
+					}
+					
+							isDailyStatusAvailable = true;
+					} 
+					
+					JSONObject casesData = new JSONObject();
+					casesData.put("INSTRUCTIONS_HISTORY", finalInstructionList);
+					casesData.put("DAILY_STATUS_HISTORY", finalDailyStatusList);
+					
+					String finalString = casesData.toString();
+					
+					if (isInstructionsAvailable || isDailyStatusAvailable)
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Instructions/Daily Status History retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"No Instructions/Daily Status History Found\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
 	
 	
 }

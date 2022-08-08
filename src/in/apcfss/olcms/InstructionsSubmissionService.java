@@ -93,6 +93,9 @@ public class InstructionsSubmissionService {
 
 						System.out.println("a--->"+a);
 						if(a>0) {
+							sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks) "
+									+ " values ('" + cino + "','SUBMITTED INSTRUCTIONS TO GP', '"+user_id+"', '"+""+"', '"+instructions+"')";
+							DatabasePlugin.executeUpdate(sql, con);
 							
 							userDetails.put("RSPCODE", "01");
 							userDetails.put("RSPDESC", "INSTRUCTIONS SAVED SUCCESSFULLY");
