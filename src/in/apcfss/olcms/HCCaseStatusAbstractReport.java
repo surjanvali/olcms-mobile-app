@@ -1240,7 +1240,7 @@ public class HCCaseStatusAbstractReport {
 						String user_id = jObject.get("USER_ID").toString();
 						
 						if (roleId.equals("2")) {
-							sqlCondition += " and a.dist_id='" + dept_code + "' ";
+							sqlCondition += " and a.dist_id='" + dist_id + "' ";
 						}
 						
 						sql="select a.dept_code as deptcode , upper(d.description) as description,count(*) as total_cases, "
@@ -1479,7 +1479,23 @@ public class HCCaseStatusAbstractReport {
 						    	cases.put("RESPONDENT_ADVOCATE_NO", entry.get("advocateccno").toString());
 						    	cases.put("DISTRICT_NAME", entry.get("district_name").toString());
 						    	cases.put("ACKNOWLEDGEMENT_FILE_PATH", entry.get("ack_file_path"));
-						    	cases.put("BARCODE_FILE_PATH", entry.get("barcode_file_path"));
+						    	cases.put("BARCODE_FILE_PATH", entry.get("barcode_file_path")!=null?"https://apolcms.ap.gov.in/"+entry.get("barcode_file_path"):"");
+						    	
+						    	String scannedAffidavitPath="";
+
+								if (entry.get("ack_no") != null)
+								{
+									if (entry.get("hc_ack_no")!=null && !entry.get("hc_ack_no").equals("-")) {
+										scannedAffidavitPath = "https://apolcms.ap.gov.in/uploads/scandocs/" + entry.get("hc_ack_no")
+										+ "/" + entry.get("hc_ack_no") + ".pdf";
+									}
+									else if (entry.get("hc_ack_no")!=null && entry.get("hc_ack_no").equals("-")) {
+										scannedAffidavitPath = "https://apolcms.ap.gov.in/uploads/scandocs/" + entry.get("ack_no")
+										+ "/" + entry.get("ack_no") + ".pdf";
+									}
+								}
+								
+								cases.put("SCANNED_AFFIDAVIT_PATH", scannedAffidavitPath);
 						    	
 						    	finalList.put(cases);
 							}
