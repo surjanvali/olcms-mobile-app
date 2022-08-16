@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -116,7 +118,32 @@ public class HCClosedCasesReport {
 								cases.put("RESPONDENT_NAME", entry.get("res_name").toString());
 								cases.put("PETITIONER_ADVOCATE", entry.get("pet_adv").toString());
 								cases.put("RESPONDENT_ADVOCATE", entry.get("res_adv").toString());
-								cases.put("ORDER_PATHS", entry.get("orderpaths").toString());
+								//cases.put("ORDER_PATHS", entry.get("orderpaths").toString());							
+								
+								JSONArray orderdocumentList = new JSONArray();
+								
+						    	
+						    	if (entry.get("orderpaths") != null)
+						    	{
+						    		String mydata = entry.get("orderpaths").toString();
+						    		Pattern pattern = Pattern.compile("(?<=a href=\".)(.*?)(?=\" target)");
+						    		Matcher matcher = pattern.matcher(mydata);
+						    		Pattern pattern2 = Pattern.compile("(?<=<span>)(.*?)(?=</span)");
+						    		Matcher matcher2 = pattern2.matcher(mydata);
+						    		
+						            while (matcher.find() && matcher2.find()){
+						            	JSONObject orderData = new JSONObject();
+						                String s = matcher.group();
+						                String s1 = matcher2.group();
+						                orderData.put("ORDER_NAME", s1);
+						                orderData.put("ORDER_DOC_PATH", "https://apolcms.ap.gov.in/"+s);
+						                
+						                orderdocumentList.put(orderData);
+						            }
+						           
+						           
+						    	}
+						    	cases.put("ORDER_PATHS", orderdocumentList);
 								
 								
 								finalList.put(cases);
