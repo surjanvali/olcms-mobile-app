@@ -83,6 +83,15 @@ public class OfficersRegistered {
 						else {
 							String selectedDistId = "";
 							selectedDistId = jObject.get("SELECTED_DIST_ID").toString();
+							
+							if (selectedDistId.equals("ALL")) {
+								sql = "select m.dept_id,upper(d.description) as description,trim(nd.fullname_en) as fullname_en, trim(nd.designation_name_en) as designation_name_en,m.mobileno,m.emailid from nodal_officer_details m "
+										+ "inner join (select distinct employee_id,fullname_en,designation_name_en, designation_id from nic_data) nd on (m.employeeid=nd.employee_id and m.designation=nd.designation_id)"
+										+ "inner join users u on (m.emailid=u.userid)"
+										+ "inner join dept_new d on (m.dept_id=d.dept_code)";
+							}
+							
+							else {
 							tableName = getTableName(selectedDistId, con);
 
 							sql = "select m.dept_id,upper(d.description) as description,trim(nd.fullname_en) as fullname_en, trim(nd.designation_name_en) as designation_name_en,m.mobileno,m.emailid from nodal_officer_details m "
@@ -92,6 +101,7 @@ public class OfficersRegistered {
 									+ "inner join users u on (m.emailid=u.userid)"
 									+ "inner join dept_new d on (m.dept_id=d.dept_code)" + "where m.dist_id='"
 									+ selectedDistId + "' order by 1";
+							}
 						}
 					} else if (officerType.equals("NO")) {
 
@@ -179,6 +189,90 @@ public class OfficersRegistered {
 		return Response.status(200).entity(jsonStr).build();
 	}
 	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/getDistricts")
+	public static Response getCasesListFilters(String incomingData) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} else {
+
+					String sql = null, sqlCondition = "", roleId = "", distId = "", deptCode = "", userId = "";
+
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					userId = jObject.get("USER_ID").toString();
+					con = DatabasePlugin.connect();
+					
+					
+					sql = "select district_id,upper(district_name) as dist_name from district_mst order by district_name";
+					
+					
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+
+					JSONArray distList = new JSONArray();
+					JSONObject casesData = new JSONObject();
+
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("DIST_CODE", entry.get("district_id").toString());								
+							cases.put("DIST_NAME", entry.get("dist_name").toString());
+							
+							distList.put(cases);
+						}
+					} 
+					casesData.put("DIST_LIST", distList);					
+					
+					
+					
+					String finalString = casesData.toString();
+					
+					if (casesData.length()>0)						
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Districts data retrived successfully\"  , "
+								+ finalString.substring(1, finalString.length() - 1) + "}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+								+ finalString.substring(1, finalString.length() - 1) + " }}";
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
 	
 	
 	

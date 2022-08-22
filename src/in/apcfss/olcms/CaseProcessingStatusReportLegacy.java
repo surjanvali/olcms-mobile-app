@@ -75,17 +75,16 @@ public class CaseProcessingStatusReportLegacy {
 						
 						else {
 							con = DatabasePlugin.connect();
-							sql="select a1.reporting_dept_code as deptcode,dn1.description,sum(total_cases) as  total_cases, sum(petition_uploaded) as petition_uploaded,sum(closed_cases) as closed_cases, "
+							sql="select a1.reporting_dept_code as deptcode,dn1.description,sum(total_cases) as  total_cases,sum(olcms_uploads) as olcms_uploads, sum(petition_uploaded) as petition_uploaded,sum(closed_cases) as closed_cases, "
 									+ " sum(counter_uploaded) as counter_uploaded, sum(pwrcounter_uploaded) as pwrcounter_uploaded,sum(counter_approved_gp) as counter_approved_gp "
 									+ " from ( "
 									+ " select case when reporting_dept_code='CAB01' then a.dept_code else reporting_dept_code end as reporting_dept_code,a.dept_code,count(*) as total_cases"
-									+ ", sum(case when petition_document is not null and length(petition_document)>10 then 1 else 0 end) as petition_uploaded "
+									+ ",sum(case when scanned_document_path is not null and length(scanned_document_path)>10 then 1 else 0 end) as olcms_uploads, sum(case when petition_document is not null and length(petition_document)>10 then 1 else 0 end) as petition_uploaded "
 									+ ", sum(case when a.ecourts_case_status='Closed' then 1 else 0 end) as closed_cases "
 									+ ", sum(case when a.ecourts_case_status='Pending' and counter_filed_document is not null and length(counter_filed_document)>10  then 1 else 0 end) as counter_uploaded"
 									+ ", sum(case when a.ecourts_case_status='Pending' and pwr_uploaded_copy is not null and length(pwr_uploaded_copy)>10  then 1 else 0 end) as pwrcounter_uploaded "
 									+ ", sum(case when counter_approved_gp='Yes' then 1 else 0 end) as counter_approved_gp from ecourts_case_data a "
 									+ " left join apolcms.ecourts_olcms_case_details b using (cino)inner join dept_new dn on (a.dept_code=dn.dept_code) ";
-									
 
 									if(roleId.equals("3") || roleId.equals("4") || roleId.equals("5") || roleId.equals("9"))
 										sql+=" and (dn.reporting_dept_code='"+dept_code+"' or dn.dept_code='"+dept_code+"')";
@@ -113,6 +112,7 @@ public class CaseProcessingStatusReportLegacy {
 							    	cases.put("SEC_DEPT_CODE", entry.get("deptcode").toString());						    	
 							    	cases.put("SEC_DEPT_NAME", entry.get("description").toString());
 							    	cases.put("TOTAL_CASES", entry.get("total_cases"));
+							    	cases.put("OLCMS_UPLOADS", entry.get("olcms_uploads"));
 							    	cases.put("PETITION_UPLOADED", entry.get("petition_uploaded"));
 							    	cases.put("CLOSED", entry.get("closed_cases").toString());
 							    	cases.put("COUNTER_FILED", entry.get("counter_uploaded").toString());
@@ -206,7 +206,7 @@ public class CaseProcessingStatusReportLegacy {
 					
 						
 						
-					sql = "select a.dept_code as deptcode,dn.description,count(*) as total_cases, "
+					sql = "select a.dept_code as deptcode,dn.description,count(*) as total_cases,sum(case when scanned_document_path is not null and length(scanned_document_path)>10 then 1 else 0 end) as olcms_uploads, "
 							+ "sum(case when petition_document is not null and length(petition_document)>10  then 1 else 0 end) as petition_uploaded  "
 							+ ", sum(case when a.ecourts_case_status='Closed' then 1 else 0 end) as closed_cases "
 							+ ",sum(case when a.ecourts_case_status='Pending' and counter_filed_document is not null  and length(counter_filed_document)>10 then 1 else 0 end) as counter_uploaded ,"
@@ -238,6 +238,7 @@ public class CaseProcessingStatusReportLegacy {
 							    	cases.put("HOD_DEPT_CODE", entry.get("deptcode").toString());						    	
 							    	cases.put("HOD_DEPT_NAME", entry.get("description").toString());
 							    	cases.put("TOTAL_CASES", entry.get("total_cases"));
+							    	cases.put("OLCMS_UPLOADS", entry.get("olcms_uploads"));
 							    	cases.put("PETITION_UPLOADED", entry.get("petition_uploaded"));
 							    	cases.put("CLOSED", entry.get("closed_cases").toString());
 							    	cases.put("COUNTER_FILED", entry.get("counter_uploaded").toString());
@@ -349,6 +350,9 @@ public class CaseProcessingStatusReportLegacy {
 						}
 						if(caseStatus.equals("GPCOUNTER")) {
 							sqlCondition=" and counter_approved_gp='Yes' ";
+						}
+						if(caseStatus.equals("SCANNEDDOC")) {
+							sqlCondition=" and scanned_document_path is not null and length(scanned_document_path)>10 ";
 						}
 					}
 					
