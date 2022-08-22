@@ -85,7 +85,7 @@ public class CaseProcessingStatusReport {
 									+ "	from ecourts_gpo_ack_depts  a "
 									+ " left join ecourts_olcms_case_details ecod on(a.ack_no=ecod.cino and a.respondent_slno=ecod.respondent_slno)"
 									+ "	left join ecourts_gpo_ack_dtls  b using(ack_no) inner join dept_new dn on (a.dept_code=dn.dept_code)"
-									+ " where  b.ack_type='NEW' "
+									+ " where  b.ack_type='NEW' and a.dept_code='"+dept_code+"' "
 									+ "	group by dn.reporting_dept_code,a.dept_code,dn.description "
 									
 									+ ") a1 inner join dept_new dn1 on (a1.reporting_dept_code=dn1.dept_code)  group by a1.reporting_dept_code,dn1.description order by 1";
