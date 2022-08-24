@@ -259,7 +259,7 @@ public class HCFinalOrdersImplementedReport {
 								String finalString = casesData.toString();
 								
 								if (isDataAvailable)					    
-									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Contempt cases report retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Final Order Impl report retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
 								else
 									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
 							
@@ -382,7 +382,7 @@ public class HCFinalOrdersImplementedReport {
 								String finalString = casesData.toString();
 								
 								if (isDataAvailable)					    
-									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Contempt cases report retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"New cases report retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
 								else
 									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
 							
@@ -506,7 +506,7 @@ public class HCFinalOrdersImplementedReport {
 								String finalString = casesData.toString();
 								
 								if (isDataAvailable)					    
-									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Contempt cases report retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Legacy cases report retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
 								else
 									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
 							

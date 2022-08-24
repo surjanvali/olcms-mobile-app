@@ -69,7 +69,7 @@ public class DistrictNodalOfficersAbstractReport {
 					String user_id = jObject.get("USER_ID").toString();	
 					
 					
-					sql = "select dist_id as  distid,upper(b.district_name) as district_name,count(*) as acks From nodal_officer_details a "
+					sql = "select dist_id as distid,upper(b.district_name) as district_name,count(*) as acks From nodal_officer_details a "
 							+ "inner join district_mst b on (a.dist_id=b.district_id) where 1=1 ";
 
 					if (!dept_code.equals("") && !dept_code.equals("0"))
@@ -94,8 +94,9 @@ public class DistrictNodalOfficersAbstractReport {
 						
 						for (Map<String, Object> entry : data) {								   
 							JSONObject cases = new JSONObject();
-					    	cases.put("DIST_NAME", entry.get("district_name").toString());						    	
-					    	cases.put("NO_REGISTERED", entry.get("acks").toString());
+					    	cases.put("DIST_NAME", entry.get("district_name").toString());
+					    	cases.put("DIST_ID", entry.get("distid").toString());
+					    	cases.put("OFFICERS_REGISTERED", entry.get("acks").toString());
 					    	
 					    	finalList.put(cases);
 						}

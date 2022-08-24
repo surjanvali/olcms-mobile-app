@@ -184,8 +184,8 @@ public class EOfficeEmployeeReport {
 					else if(!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
 						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
 					}
-					else if(!jObject.has("SELECTED_DEPT_CODE") || jObject.get("SELECTED_DEPT_CODE").toString().equals("")) {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- SELECTED_DEPT_CODE is missing in the request.\" }}";
+					else if(!jObject.has("SELECTED_DEPT_NAME") || jObject.get("SELECTED_DEPT_NAME").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- SELECTED_DEPT_NAME is missing in the request.\" }}";
 					}
 					else {
 
@@ -261,7 +261,7 @@ public class EOfficeEmployeeReport {
 								String finalString = casesData.toString();
 								
 								if (isDataAvailable)					    
-									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Officer wise cases retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Officer wise details retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
 								else
 									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
 							

@@ -652,4 +652,142 @@ public class ContemptCasesAbstractReport {
 	}
 	
 	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/displayCaseFilters")
+	public static Response displayCaseFilters(String incomingData) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} else {
+
+					String sql = null, sqlCondition = "", roleId = "", distId = "", deptCode = "", userId = "";
+
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					userId = jObject.get("USER_ID").toString();
+					con = DatabasePlugin.connect();
+					
+					//Populate the District list in the District dropdown
+					
+					if (roleId.equals("2")) {
+						sql = "select district_id,upper(district_name) as dist_name from district_mst where district_id='" + distId + "' order by district_name";
+					}
+						
+					else {
+						sql = "select district_id,upper(district_name) as dist_name from district_mst order by district_name";
+					}
+					
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+
+					JSONArray distList = new JSONArray();
+					JSONObject casesData = new JSONObject();
+
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("DIST_CODE", entry.get("district_id").toString());								
+							cases.put("DIST_NAME", entry.get("dist_name").toString());
+							
+							distList.put(cases);
+						}
+					} 
+					casesData.put("DIST_LIST", distList);					
+					
+					
+					//Populate the Dept list in the Department dropdown
+					
+					if (roleId.equals("3") || roleId.equals("4") || roleId.equals("5") || roleId.equals("9")
+							|| roleId.equals("10")) {
+						sql = "select dept_code,dept_code||'-'||upper(description) as dept_desc from dept_new where display=true";
+						sql += " and (reporting_dept_code='" + deptCode + "' or dept_code='"
+								+ deptCode + "')";
+						sql += "  order by dept_code ";
+					}
+					else {
+						sql = "select dept_code,dept_code||'-'||upper(description) as dept_desc from dept_new where display=true order by dept_code";
+					}					
+					
+					data = DatabasePlugin.executeQuery(sql, con);
+
+					JSONArray deptList = new JSONArray();
+
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("DEPT_ID", entry.get("dept_code").toString());								
+							cases.put("DEPT_DESC", entry.get("dept_desc").toString());
+							
+							deptList.put(cases);
+						}
+					} 
+					casesData.put("DEPT_LIST", deptList);
+					
+					
+					/* START - Code to populate the registered years select box */
+					List selectData = new ArrayList();
+					
+					
+					for (int i = 2022; i > 1980; i--) {
+						LinkedHashMap<String,Integer> hm=new LinkedHashMap<String,Integer>();
+						hm.put("year", i);
+						selectData.add(hm);
+					}
+
+					
+					casesData.put("YEARS_LIST", new JSONArray(selectData));
+					/* END - Code to populate the registered years select box */
+					
+					
+					
+					String finalString = casesData.toString();
+					
+					if (casesData.length()>0)						
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases Filters retrived successfully\"  , "
+								+ finalString.substring(1, finalString.length() - 1) + "}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+								+ finalString.substring(1, finalString.length() - 1) + " }}";
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
+	
+	
+	
 }
