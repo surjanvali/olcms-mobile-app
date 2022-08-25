@@ -358,20 +358,24 @@ public class CaseProcessingStatusReportLegacy {
 					
 					
 					
-					sql = "select a.*, b.orderpaths from ecourts_case_data a left join"
+					sql = "select a.*, "
+							+ ""
+							// + "n.global_org_name as globalorgname, n.fullname_en as fullname, n.designation_name_en as designation, n.mobile1 as mobile, n.email as email, "
+							+ ""
+							+ "coalesce(trim(a.scanned_document_path),'-') as scanned_document_path1, b.orderpaths, prayer, ra.address from ecourts_case_data a "
+							+ " left join nic_prayer_data np on (a.cino=np.cino)"
+							+ " left join nic_resp_addr_data ra on (a.cino=ra.cino and party_no=1) "
+							//+ "inner join nic_data n on (a.assigned_to=n.email) "
+							+ " left join"
 							+ " ("
 							+ " select cino, string_agg('<a href=\"./'||order_document_path||'\" target=\"_new\" class=\"btn btn-sm btn-info\"><i class=\"glyphicon glyphicon-save\"></i><span>'||order_details||'</span></a><br/>','- ') as orderpaths"
 							+ " from "
 							+ " (select * from (select cino, order_document_path,order_date,order_details||' Dt.'||to_char(order_date,'dd-mm-yyyy') as order_details from ecourts_case_interimorder where order_document_path is not null and  POSITION('RECORD_NOT_FOUND' in order_document_path) = 0"
-							+ " and POSITION('INVALID_TOKEN' in order_document_path) = 0 ) x1"
-							+ " union"
+							+ " and POSITION('INVALID_TOKEN' in order_document_path) = 0 ) x1" + " union"
 							+ " (select cino, order_document_path,order_date,order_details||' Dt.'||to_char(order_date,'dd-mm-yyyy') as order_details from ecourts_case_finalorder where order_document_path is not null"
 							+ " and  POSITION('RECORD_NOT_FOUND' in order_document_path) = 0"
 							+ " and POSITION('INVALID_TOKEN' in order_document_path) = 0 ) order by cino, order_date desc) c group by cino ) b"
-							+ " on (a.cino=b.cino) "
-							+ " left join apolcms.ecourts_olcms_case_details cd on (a.cino=cd.cino) "
-							+ "	inner join dept_new d on (a.dept_code=d.dept_code) where d.display = true "
-							+ "";
+							+ " on (a.cino=b.cino) inner join dept_new d on (a.dept_code=d.dept_code) where d.display = true ";
 					
 					if(roleId.equals("2")){
 						sql+=" and a.dist_id='"+dist_id+"'";
@@ -394,20 +398,31 @@ public class CaseProcessingStatusReportLegacy {
 									JSONObject cases = new JSONObject();
 									cases.put("CINO", entry.get("cino").toString());
 									cases.put("DATE_OF_FILING", entry.get("date_of_filing"));
-									cases.put("CASE_TYPE", entry.get("type_name_fil"));
-							    	cases.put("REG_NO", entry.get("reg_no").toString());
-							    	cases.put("REG_YEAR", entry.get("reg_year").toString());
+									cases.put("CASE_REG_NO", entry.get("type_name_fil")+"/"+entry.get("reg_no")+"/"+entry.get("reg_year"));
 							    	cases.put("FILING_NO", entry.get("fil_no").toString());
 							    	cases.put("FILING_YEAR", entry.get("fil_year").toString());
-							    	cases.put("DATE_OF_NEXT_LISTING", entry.get("date_of_filing").toString());
+							    	cases.put("DATE_OF_NEXT_LISTING", entry.get("date_next_list").toString());
 							    	cases.put("BENCH", entry.get("bench_name").toString());
 							    	cases.put("JUDGE_NAME", "Hon'ble Judge " +entry.get("coram"));
 							    	cases.put("PETITIONER_NAME", entry.get("pet_name"));
 							    	cases.put("DISTRICT_NAME", entry.get("dist_name"));
 							    	cases.put("PURPOSE", entry.get("purpose_name"));
-							    	cases.put("RESPONDENTS", entry.get("res_name"));
+							    	cases.put("RESPONDENTS", entry.get("res_name")+", "+ entry.get("address"));
 							    	cases.put("PETITIONER_ADVOCATE", entry.get("pet_adv"));
 							    	cases.put("RESPONDENT_ADVOCATE", entry.get("res_adv"));
+							    	cases.put("PRAYER", entry.get("prayer"));
+							    	
+							    	String scannedAffidavitPath="";
+
+									if (entry.get("scanned_document_path1") != null)
+									{
+										if (entry.get("scanned_document_path1")!=null && !entry.get("scanned_document_path1").equals("-")) {
+											scannedAffidavitPath = "https://apolcms.ap.gov.in/" + entry.get("scanned_document_path");
+										}
+										
+									}
+									
+									cases.put("SCANNED_AFFIDAVIT_PATH", scannedAffidavitPath);
 							    	
 							    	JSONArray orderdocumentList = new JSONArray();
 									
