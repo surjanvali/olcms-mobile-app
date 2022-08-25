@@ -401,11 +401,11 @@ public class CaseProcessingStatusReport {
 							    	cases.put("DATE", entry.get("generated_date").toString());
 							    	cases.put("DIST_NAME", entry.get("district_name"));
 							    	cases.put("CASE_TYPE", entry.get("case_full_name"));
-							    	cases.put("MAIN_CASE_NO", entry.get("maincaseno").toString());
+							    	cases.put("MAIN_CASE_NO", entry.get("maincaseno"));
 							    	cases.put("RESPONDENTS", entry.get("dept_descs").toString());
 							    	cases.put("ADV_CCNO", entry.get("advocateccno").toString());
 							    	cases.put("ADV_NAME", entry.get("advocatename").toString());
-							    	cases.put("ACK_FILE_PATH", entry.get("ack_file_path").toString());
+							    	cases.put("ACK_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("ack_file_path").toString());
 							    	
 							    	String scannedAffidavitPath="";
 
