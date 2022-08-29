@@ -66,7 +66,7 @@ public class CaseProcessingStatusReport {
 					String user_id = jObject.get("USER_ID").toString();					
 
 						
-						if(roleId.equals("5") || roleId.equals("9")) {
+						if(roleId.equals("5") || roleId.equals("9") || roleId.equals("10")) {
 							
 							 return hodDeptWise(incomingData); 
 						}
@@ -339,7 +339,7 @@ public class CaseProcessingStatusReport {
 							sqlCondition=" and counter_approved_gp='Yes' ";
 						}
 						
-						if(caseStatus.equals("SD")) {
+						if(caseStatus.equals("ALL")) {
 							sqlCondition += " and (dmt.dept_code='" + selectedDeptCode + "' or dmt.reporting_dept_code='" + selectedDeptCode+ "') "; 
 						}
 						
@@ -356,7 +356,7 @@ public class CaseProcessingStatusReport {
 					{
 						sqlCondition += " and ad.respondent_slno>1 ";
 					}
-					else if(respondenttype.equals("SD")) {
+					else if(respondenttype.equals("ALL")) {
 						sqlCondition += " and (dmt.dept_code='" + selectedDeptCode + "' or dmt.reporting_dept_code='" + selectedDeptCode+ "') "; 
 					}
 					
@@ -368,7 +368,7 @@ public class CaseProcessingStatusReport {
 						condition = " inner join ecourts_mst_gp_dept_map egm on (egm.dept_code=ad.dept_code) ";
 					}
 
-					if (roleId.equals("2")) {
+					if (roleId.equals("2") || roleId.equals("10")) {
 						sql+=" and a.dist_id='"+dist_id+"'";
 					}
 
