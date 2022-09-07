@@ -60,12 +60,9 @@ public class CaseCategoryUpdationReport {
 						String user_id = jObject.get("USER_ID").toString();
 						
 						if (roleId.equals("5") || roleId.equals("9")) {
-
 							return getHODDeptWiseAbstract(incomingData);
 						} else // if(roleId.equals("3") || roleId.equals("4"))
 						{
-							con = DatabasePlugin.connect();
-
 							String str1 = "";
 
 							if ((roleId.equals("4") || roleId.equals("5") || roleId.equals("3"))
