@@ -31,12 +31,12 @@ import plugins.DatabasePlugin;
  *	
  **/
 
-@Path("/caseCategoryUpdation")
+@Path("/caseCategoryUpdationService")
 public class CaseCategoryUpdationService {
 	@POST
 	@Produces({ "application/json" })
 	@Consumes({ "application/json" })
-	@Path("/getCasesList")
+	@Path("/secDeptWise")
 	public static Response secDeptWise(String incomingData) throws Exception {
 		Connection con = null;
 		String jsonStr = "",sql="",sqlCondition = "";
