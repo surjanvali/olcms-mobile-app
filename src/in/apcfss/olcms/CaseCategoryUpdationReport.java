@@ -226,6 +226,7 @@ public class CaseCategoryUpdationReport {
 							for (Map<String, Object> entry : data) {								   
 								JSONObject cases = new JSONObject();
 								cases.put("DEPT_NAME", entry.get("description").toString());
+								cases.put("DEPT_ID", entry.get("deptcode"));
 								cases.put("A1", entry.get("a1"));
 								cases.put("A2", entry.get("a2"));
 								cases.put("B1", entry.get("b1"));
