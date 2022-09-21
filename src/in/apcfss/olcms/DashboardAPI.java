@@ -67,7 +67,7 @@ public class DashboardAPI {
 					String total_value="0",assignment_value="0",approval_pending_value="0",closedcases_value="0",new_cases_value="0",final_order_value="0",assignment_value_new_cases="0",approval_pending_value_new_cases="0";
 					String  disposed_value="0",allowed_value="0",dismissed_value="0",withdrawn_value="0",closed_value="0",returned_value="0",assigned_value="0",counterfilecount_value="0",parawisecount_value="0";
 					String str1="0",str2="0";
-					String dailyStatusbyGP = "0", assigned_new_cases_value = "0",instruction_count ="0",totaldeptcases = "0";
+					String dailyStatusbyGPLegacy = "0", dailyStatusbyGPNew = "0", assigned_new_cases_value = "0",instruction_count ="0",instruction_count_new = "0",totaldeptcases = "0";
 					String yearWiseData = "\"GP_YEAR_WISECOUNT\" : 0";
 					if(roleId!=null && !roleId.equals("")){
 						
@@ -146,9 +146,9 @@ public class DashboardAPI {
 							returned_value=Long.toString(returned);
 							
 							
-						} else if(roleId.equals("3") || roleId.equals("4")  || roleId.equals("5") || roleId.equals("9")) {
+						} else if(roleId.equals("3") || roleId.equals("4")  || roleId.equals("5") || roleId.equals("9") || roleId.equals("15")) {
 							
-							if(roleId.equals("3") || roleId.equals("4")) {
+							if(roleId.equals("3") || roleId.equals("4")|| roleId.equals("15")) {
 								sql="select count(*) "
 									+ "from ecourts_case_data a "
 									+ "inner join dept_new d on (a.dept_code=d.dept_code) "
@@ -208,10 +208,16 @@ public class DashboardAPI {
 							returned_value=Long.toString(returned);
 							
 							// Daily Status
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " inner join dept_new d on (a.dept_code=d.dept_code) "
 									+ " where d.display = true and (reporting_dept_code='"+deptCode+"' or a.dept_code='"+deptCode+"') ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) "
+									+ " inner join dept_new d on (e.dept_code=d.dept_code) "
+									+ " where a.ack_type = 'NEW' and (reporting_dept_code='"+deptCode+"' or e.dept_code='"+deptCode+"') ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
 							
 						}
 						
@@ -306,10 +312,16 @@ public class DashboardAPI {
 							Long returned=(Long) ((Map) rs4.get(0)).get("returned");
 							returned_value=Long.toString(returned);
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " inner join dept_new d on (a.dept_code=d.dept_code) "
 									+ " where d.display = true and a.dist_id='"+distId+"' ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) "
+									+ " inner join dept_new d on (e.dept_code=d.dept_code) "
+									+ " where a.ack_type = 'NEW' and e.distid='"+distId+"' ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);					
+							
 							
 						} else if(roleId.equals("3")) { // Sect. Dept.
 							
@@ -364,9 +376,14 @@ public class DashboardAPI {
 							}
 							
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where dept_code='"+deptCode+"' ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.dept_code='"+deptCode+"' ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
+							
 							
 						}else if(roleId.equals("9")) { // HOD
 							sql="select count(*) as total, "
@@ -414,9 +431,15 @@ public class DashboardAPI {
 								Long approval_pending_new=(Long) ((Map) dashboardCounts.get(0)).get("approval_pending");
 								approval_pending_value_new_cases=Long.toString(approval_pending_new);
 							}
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							
+							
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where dept_code='"+deptCode+"' ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.dept_code='"+deptCode+"' ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
 							
 						}else if(roleId.equals("4")) { // MLO
 							// sql="select count(*) as assigned from ecourts_case_data where assigned=true and assigned_to='"+userid+"' and case_status=2 and coalesce(ecourts_case_status,'')!='Closed'";
@@ -474,9 +497,13 @@ public class DashboardAPI {
 							sql="select count(*) from ecourts_dept_instructions where dept_code='"+deptCode+"'";
 							instruction_count =  DatabasePlugin.getStringfromQuery(sql, con);
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where dept_code='"+deptCode+"' ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.dept_code='"+deptCode+"' ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
 							
 							
 						}
@@ -530,9 +557,14 @@ public class DashboardAPI {
 							}
 							
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where dept_code='"+deptCode+"' ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.dept_code='"+deptCode+"' ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
 						}
 						else  if(roleId.equals("10")) { // District NODAL OFFICER
 							// sql="select count(*) as assigned from ecourts_case_data where assigned=true and assigned_to='"+userid+"' and case_status=4 and coalesce(ecourts_case_status,'')!='Closed'";
@@ -582,9 +614,14 @@ public class DashboardAPI {
 								approval_pending_value_new_cases=Long.toString(approval_pending_new);
 							}
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where dept_code='"+deptCode+"' ";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.dept_code='"+deptCode+"' ";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
 						}
 						
 						
@@ -601,9 +638,14 @@ public class DashboardAPI {
 							Long assigned_new_cases=(Long) ((Map) dashboardCounts.get(0)).get("assigned");
 							assigned_new_cases_value = Long.toString(assigned_new_cases);
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where assigned=true and assigned_to='"+userid+"' and case_status=5 and coalesce(ecourts_case_status,'')!='Closed'";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);							
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.assigned=true and e.assigned_to='"+userid+"' and e.case_status=5 and coalesce(e.ecourts_case_status,'')!='Closed' ";
+							
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);						
 						}
 						else if(roleId.equals("11")) { // Section Officer (HOD)
 							// sql="select emp_id,count(*) as assigned from ecourts_case_emp_assigned_dtls where emp_id='"+empId+"' group by emp_id";
@@ -618,9 +660,14 @@ public class DashboardAPI {
 							Long assigned_new_cases=(Long) ((Map) dashboardCounts.get(0)).get("assigned");
 							assigned_new_cases_value = Long.toString(assigned_new_cases);
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where assigned=true and assigned_to='"+userid+"' and case_status=9 and coalesce(ecourts_case_status,'')!='Closed'";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);	
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.assigned=true and e.assigned_to='"+userid+"' and e.case_status=9 and coalesce(e.ecourts_case_status,'')!='Closed'";
+							
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);
 							
 						}else if(roleId.equals("12")) { // Section Officer (DIST - HOD)
 							// sql="select emp_id,count(*) as assigned from ecourts_case_emp_assigned_dtls where emp_id='"+empId+"' group by emp_id";
@@ -634,9 +681,13 @@ public class DashboardAPI {
 							Long assigned_new_cases=(Long) ((Map) dashboardCounts.get(0)).get("assigned");
 							assigned_new_cases_value = Long.toString(assigned_new_cases);
 							
-							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_gpo_daily_status) b on (a.cino=b.cino) "
+							sql="select count(*) from ecourts_case_data a inner join (select distinct cino from ecourts_dept_instructions  where legacy_ack_flag='Legacy') b on (a.cino=b.cino) "
 									+ " where assigned=true and assigned_to='"+userid+"' and case_status=10 and coalesce(ecourts_case_status,'')!='Closed'";
-							dailyStatusbyGP = DatabasePlugin.getStringfromQuery(sql, con);							
+							dailyStatusbyGPLegacy = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino from ecourts_dept_instructions where legacy_ack_flag='New') b on (a.ack_no=b.cino) \r\n"
+									+ " where a.ack_type = 'NEW' and e.assigned=true and e.assigned_to='"+userid+"' and e.case_status=10 and coalesce(e.ecourts_case_status,'')!='Closed'";
+							dailyStatusbyGPNew = DatabasePlugin.getStringfromQuery(sql, con);						
 							
 						}
 						else if(roleId.equals("1") || roleId.equals("7")) {
@@ -669,9 +720,16 @@ public class DashboardAPI {
 								
 								}
 							
-							  sql="select count(distinct a.cino) from ecourts_dept_instructions a where a.dept_code in (select dept_code from ecourts_mst_gp_dept_map where gp_id='"+userid+"')";
+							  
+							  
+							  sql="select count(distinct a.cino) from ecourts_dept_instructions a where a.dept_code in (select dept_code from ecourts_mst_gp_dept_map where gp_id='"+userid+"' and legacy_ack_flag='Legacy')";
 							  System.out.println("instruction SQL:"+sql);
 							  instruction_count = DatabasePlugin.getStringfromQuery(sql, con);
+							  
+
+							  sql="select count(distinct a.cino) from ecourts_dept_instructions a where a.dept_code in (select dept_code from ecourts_mst_gp_dept_map where gp_id='"+userid+"' and legacy_ack_flag='New')";
+							  System.out.println("instruction SQL:"+sql);
+							  instruction_count_new = DatabasePlugin.getStringfromQuery(sql, con);
 							
 							sql="select count(*) From ecourts_olcms_case_details a "
 									+ "inner join ecourts_case_data ecd on (a.cino=ecd.cino)  "
@@ -803,8 +861,8 @@ public class DashboardAPI {
 								+ disposed_value + "\", \"ALLOWED\":\"" + allowed_value + "\" ,\"DISMISSED\":\""
 								+ dismissed_value + "\",\"WITHDRAWN\":\"" + withdrawn_value + "\" ,\"HCCLOSED\":\""
 								+ closed_value + "\" ," + " \"RETURNED\":\"" + returned_value + "\" ,\"ASSIGNED\":\""
-								+ assigned_value + "\"  ,\"APPROVAL_PENDING\":\"" + approval_pending_value + "\" , \"INSTRUCTION_COUNT\":\""
-								+ instruction_count + "\" ,\"DAILY_STATUS_BY_GP\":\"" + dailyStatusbyGP + "\" , \"COUNTERFILECOUNT\":\""
+								+ assigned_value + "\"  ,\"APPROVAL_PENDING\":\"" + approval_pending_value + "\" , \"INSTRUCTIONS_LEGACY\":\""
+								+ instruction_count + "\" ,\"INSTRUCTIONS_NEW\":\"" + instruction_count_new + "\" ,\"DAILY_STATUS_BY_GP_LEGACY\":\"" + dailyStatusbyGPLegacy + "\" , \"DAILY_STATUS_BY_GP_NEW\":\"" + dailyStatusbyGPNew + "\" ,\"COUNTERFILECOUNT\":\""
 								+ counterfilecount_value + "\"  ,\"PARAWISECOUNT\":\"" + parawisecount_value+"\","+yearWiseData
 								+ ", \"RSPCODE\": \"01\",\"RSPDESC\": \"SUCCESS\"}";
 						// +"\" },";
