@@ -339,11 +339,11 @@ public class ContemptCasesAbstractReport {
 						    	finalList.put(cases);
 							}
 							
-								casesData.put("HOD_DEPT_WISE_NEW_CASE_DATA", finalList);							
+								casesData.put("DEPT_WISE_LIST", finalList);							
 								isNewDataAvailable=true;
 														
 							} else {								
-								casesData.put("HOD_DEPT_WISE_NEW_CASE_DATA", finalList);									
+								casesData.put("DEPT_WISE_LIST", finalList);									
 							}
 						
 						

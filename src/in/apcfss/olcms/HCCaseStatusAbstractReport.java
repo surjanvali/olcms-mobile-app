@@ -687,14 +687,14 @@ public class HCCaseStatusAbstractReport {
 							    	finalList.put(cases);
 								}
 								JSONObject casesData = new JSONObject();
-								casesData.put("HOD_DEPT_WISE_NEW_DATA", finalList);
+								casesData.put("HOD_DEPT_WISE_LEGACY_DATA", finalList);
 								String finalString = casesData.toString();
 								    
 								jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases retrived successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
 															
 								} else {
 									JSONObject casesData = new JSONObject();
-									casesData.put("HOD_DEPT_WISE_NEW_DATA", finalList);	
+									casesData.put("HOD_DEPT_WISE_LEGACY_DATA", finalList);	
 									String finalString = casesData.toString();
 									jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "+finalString.substring(1,finalString.length()-1)+" }}";
 								}		
@@ -1168,11 +1168,11 @@ public class HCCaseStatusAbstractReport {
 						    	finalList.put(cases);
 							}
 							
-								casesData.put("HOD_DEPT_WISE_NEW_CASE_DATA", finalList);							
+								casesData.put("HOD_DEPT_WISE_NEW_DATA", finalList);							
 								isNewDataAvailable=true;
 														
 							} else {								
-								casesData.put("HOD_DEPT_WISE_NEW_CASE_DATA", finalList);									
+								casesData.put("HOD_DEPT_WISE_NEW_DATA", finalList);									
 							}
 						
 						
@@ -1297,12 +1297,12 @@ public class HCCaseStatusAbstractReport {
 						    	legacyCaseList.put(cases);
 							}
 							
-							casesData.put("HOD_DEPT_WISE_LEGACY_CASE_DATA", legacyCaseList);
+							casesData.put("HOD_DEPT_WISE_LEGACY_DATA", legacyCaseList);
 							isLegacyDataAvailable = true;						
 														
 							} else {
 								
-								casesData.put("HOD_DEPT_WISE_LEGACY_CASE_DATA", legacyCaseList);	
+								casesData.put("HOD_DEPT_WISE_LEGACY_DATA", legacyCaseList);	
 								
 							}
 						
