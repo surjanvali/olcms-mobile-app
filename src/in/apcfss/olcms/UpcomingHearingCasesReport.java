@@ -315,7 +315,6 @@ public class UpcomingHearingCasesReport {
 						int dist_id = Integer.parseInt(jObject.get("DIST_ID").toString());
 						String user_id = jObject.get("USER_ID").toString();
 						String caseStatus = jObject.get("CASE_STATUS").toString();
-						String report_level = jObject.get("REPORT_LEVEL").toString();
 						
 						if(!caseStatus.equals("")) {
 							if(caseStatus.equals("today")){

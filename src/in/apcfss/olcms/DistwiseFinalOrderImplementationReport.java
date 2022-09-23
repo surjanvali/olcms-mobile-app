@@ -235,6 +235,7 @@ public class DistwiseFinalOrderImplementationReport {
 							
 							for (Map<String, Object> entry : data) {								   
 								JSONObject cases = new JSONObject();
+								cases.put("DIST_ID", entry.get("district_id"));	
 						    	cases.put("DIST_NAME", entry.get("district_name"));						    	
 						    	cases.put("TOTAL_CASES", entry.get("total_cases"));
 						    	cases.put("PENDING_AT_COLLECTOR", entry.get("pending_dc"));
@@ -316,6 +317,9 @@ public class DistwiseFinalOrderImplementationReport {
 					else if(!jObject.has("CASE_STATUS") || jObject.get("CASE_STATUS").toString().equals("")) {
 						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- CASE_STATUS is missing in the request.\" }}";
 					}
+					else if(!jObject.has("SELECTED_DIST_ID") || jObject.get("SELECTED_DIST_ID").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- SELECTED_DIST_ID is missing in the request.\" }}";
+					}
 										
 					else {
 						
@@ -324,6 +328,7 @@ public class DistwiseFinalOrderImplementationReport {
 						int dist_id = Integer.parseInt(jObject.get("DIST_ID").toString());
 						String user_id = jObject.get("USER_ID").toString();
 						String caseStatus = jObject.get("CASE_STATUS").toString();
+						String selectedDistId = jObject.get("SELECTED_DIST_ID").toString();
 						
 						
 						if(!caseStatus.equals("")) {
@@ -375,6 +380,10 @@ public class DistwiseFinalOrderImplementationReport {
 								&& !dept_code.toString().contentEquals("0")) {
 							sqlCondition += " and a.dept_code='" + dept_code + "' ";
 						}
+						if (selectedDistId != null) {
+							sqlCondition += " and a.dist_id='" + selectedDistId.trim() + "' ";
+						}
+						 
 						
 						sql = "select a.*, coalesce(trim(a.scanned_document_path),'-') as scanned_document_path1, b.orderpaths, prayer, ra.address from ecourts_case_data a  "
 								+ " left join nic_prayer_data np on (a.cino=np.cino)"
