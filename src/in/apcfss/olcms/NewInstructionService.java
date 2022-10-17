@@ -1,6 +1,7 @@
 package in.apcfss.olcms;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -635,7 +636,7 @@ public class NewInstructionService {
 						    	
 						    	
 						    	if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
-						    		history.put("UPLOADED_FILE_PATH", entry.get("upload_fileno").toString());
+						    		history.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
 						    		
 						    	} else {
 						    		history.put("UPLOADED_FILE_PATH", "");
@@ -719,7 +720,7 @@ public class NewInstructionService {
 						    	
 						    	
 						    	if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
-						    		history.put("UPLOADED_FILE_PATH", entry.get("upload_fileno").toString());
+						    		history.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
 						    		
 						    	} else {
 						    		history.put("UPLOADED_FILE_PATH", "");
@@ -763,19 +764,57 @@ public class NewInstructionService {
 	@POST
 	@Consumes({MediaType.MULTIPART_FORM_DATA})
 	@Path("/submitInstructions")
-	public Response submitInstructions(@FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("file") FormDataBodyPart body,@FormDataParam("dataValue") String instructions) throws Exception {
+	public Response submitInstructions(@FormDataParam("file") InputStream uploadedInputStream,
+			@FormDataParam("file") FormDataBodyPart body, @FormDataParam("cino") String cino,
+			@FormDataParam("instructions") String instructions, @FormDataParam("deptCode") String deptCode,
+			@FormDataParam("distCode") String distCode, @FormDataParam("roleId") String roleId,
+			@FormDataParam("userId") String userId, @FormDataParam("oldNewType") String oldNewType) throws Exception {
 
 		Connection con = null;
+		PreparedStatement ps = null;
 		String jsonStr = "";
 
 		try {
 				String newFileName="Instruction_"+CommonModels.randomTransactionNo()+"."+body.getMediaType().getSubtype();
 				
 				String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/Instruction/"+newFileName;
+				String fileUploadPath = "uploads/Instruction/"+newFileName;
 				
 				writeToFile(uploadedInputStream, uploadedFileLocation);
-				System.out.println("The instructions value is:"+instructions);
-				System.out.println("Uploaded File location:"+uploadedFileLocation);
+				
+				String status_flag = "";
+				
+				if(roleId.equals("6")) {
+					 status_flag="D";
+				}else {
+					 status_flag="I";
+				}
+				con = DatabasePlugin.connect();
+				
+				String sql = "insert into ecourts_dept_instructions (cino, instructions , upload_fileno,dept_code ,dist_code,insert_by,legacy_ack_flag,status_instruction_flag ) "
+						+ " values (?,?, ?, ?, ?, ?,?,?)";
+
+				ps = con.prepareStatement(sql);
+				int i = 1;
+				ps.setString(i, cino);
+				ps.setString(++i, instructions != null ? instructions.toString() : "");
+				ps.setString(++i, fileUploadPath);
+				ps.setString(++i, CommonModels.checkStringObject(deptCode));
+				ps.setInt(++i, CommonModels.checkIntObject(distCode));
+				ps.setString(++i, userId);
+				ps.setString(++i, oldNewType);
+				ps.setString(++i, status_flag);
+			 
+
+				System.out.println("sql--"+sql);
+		
+				int a = ps.executeUpdate();
+				if(a>0) {
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks,uploaded_doc_path) "
+							+ " values ('" + cino + "','SUBMITTED INSTRUCTIONS TO GP', '"+userId+"', 'MOBILE APP', '"+instructions+"','"+fileUploadPath+"')";
+					DatabasePlugin.executeUpdate(sql, con);
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Instructions saved successfully\" }}";
+				}		
 			
 		}	catch (Exception e) {
 			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
