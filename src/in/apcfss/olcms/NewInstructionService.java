@@ -104,7 +104,6 @@ public class NewInstructionService {
 	
 							for (Map<String, Object> entry : data) {
 								JSONObject cases = new JSONObject();
-								cases.put("SNO", entry.get("sno").toString());
 								cases.put("CASE_TYPE", entry.get("case_full_name").toString());
 	
 								caseTypeList.put(cases);
