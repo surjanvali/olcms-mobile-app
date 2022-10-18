@@ -94,7 +94,7 @@ public class NewInstructionService {
 					JSONObject casesData = new JSONObject();
 
 					//START:Populate the Case Types selection for the Legacy cases//
-						sql = "select sno,case_full_name from case_type_master order by sno";
+						sql = "select upper(trim(case_short_name)) as sno,upper(trim(case_short_name)) as case_full_name from case_type_master order by sno";
 	
 						List<Map<String, Object>> data  = DatabasePlugin.executeQuery(sql, con);
 	
