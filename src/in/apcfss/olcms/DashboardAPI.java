@@ -880,7 +880,7 @@ public class DashboardAPI {
 								+ assigned_value + "\"  ,\"APPROVAL_PENDING\":\"" + approval_pending_value + "\" , \"INSTRUCTIONS_LEGACY\":\""
 								+ instruction_count + "\" ,\"INSTRUCTIONS_NEW\":\"" + instruction_count_new + "\" ,\"DAILY_STATUS_BY_GP_LEGACY\":\"" + dailyStatusbyGPLegacy + "\" , \"DAILY_STATUS_BY_GP_NEW\":\"" + dailyStatusbyGPNew + "\" ,\"COUNTERFILECOUNT\":\""
 								+ counterfilecount_value + "\"  ,\"COUNTERFILECOUNT_NEW\":\""
-								+ counterfilecount_new_value + "\", \"PARAWISECOUNT\":\"" + parawisecount_value+"\",\"PARAWISECOUNT_NEW\":\"" + parawisecount_new_value+"\""+yearWiseData
+								+ counterfilecount_new_value + "\", \"PARAWISECOUNT\":\"" + parawisecount_value+"\",\"PARAWISECOUNT\":\"" + parawisecount_value+"\","+yearWiseData
 								+ ", \"RSPCODE\": \"01\",\"RSPDESC\": \"SUCCESS\"}";
 						// +"\" },";
 					
