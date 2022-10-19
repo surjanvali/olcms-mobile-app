@@ -65,7 +65,7 @@ public class DashboardAPI {
 
 					
 					String total_value="0",assignment_value="0",approval_pending_value="0",closedcases_value="0",new_cases_value="0",final_order_value="0",assignment_value_new_cases="0",approval_pending_value_new_cases="0";
-					String  disposed_value="0",allowed_value="0",dismissed_value="0",withdrawn_value="0",closed_value="0",returned_value="0",assigned_value="0",counterfilecount_value="0",parawisecount_value="0";
+					String  disposed_value="0",allowed_value="0",dismissed_value="0",withdrawn_value="0",closed_value="0",returned_value="0",assigned_value="0",counterfilecount_value="0",parawisecount_value="0",counterfilecount_new_value="0",parawisecount_new_value="0";
 					String str1="0",str2="0";
 					String dailyStatusbyGPLegacy = "0", dailyStatusbyGPNew = "0", assigned_new_cases_value = "0",instruction_count ="0",instruction_count_new = "0",totaldeptcases = "0";
 					String yearWiseData = "\"GP_YEAR_WISECOUNT\" : 0";
@@ -739,6 +739,14 @@ public class DashboardAPI {
 							System.out.println("COUNTERS SQL:"+sql);
 							counterfilecount_value = DatabasePlugin.getStringfromQuery(sql, con);
 							
+							sql="select count(*) From ecourts_olcms_case_details a "
+									+ "inner join  ecourts_gpo_ack_dtls ad on (a.cino=ad.ack_no) inner join ecourts_gpo_ack_depts d on (ad.ack_no=d.ack_no)  "
+									+ "inner join ecourts_mst_gp_dept_map emgd on (d.dept_code=emgd.dept_code and d.assigned_to=emgd.gp_id) "
+									+ "where pwr_uploaded='Yes' and coalesce(pwr_approved_gp,'No')='Yes' and (counter_filed='No' or counter_filed='Yes') and coalesce(counter_approved_gp,'F')='F' and d.case_status='6' "
+									+ "and emgd.gp_id='"+userid+"'";
+							counterfilecount_new_value = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							
 							//System.out.println("counterFile--"+sql);
 							sql="select count(*) From ecourts_olcms_case_details a "
 									+ "inner join ecourts_case_data ecd on (a.cino=ecd.cino)  "
@@ -747,6 +755,14 @@ public class DashboardAPI {
 									+ "and emgd.gp_id='"+userid+"'  ";
 							System.out.println("PARAWISE COUNT SQL:"+sql);
 							parawisecount_value = DatabasePlugin.getStringfromQuery(sql, con);
+							
+							sql="select count(*) From ecourts_olcms_case_details a "
+									+ "inner join  ecourts_gpo_ack_dtls ad on (a.cino=ad.ack_no) inner join ecourts_gpo_ack_depts d on (ad.ack_no=d.ack_no) "
+									+ "inner join ecourts_mst_gp_dept_map emgd on (d.dept_code=emgd.dept_code and d.assigned_to=emgd.gp_id) "
+									+ "where (pwr_uploaded='No' or pwr_uploaded='Yes') and (coalesce(pwr_approved_gp,'0')='0' or coalesce(pwr_approved_gp,'No')='No' ) and d.case_status='6' "
+									+ "and emgd.gp_id='"+userid+"'  ";
+							
+							parawisecount_new_value = DatabasePlugin.getStringfromQuery(sql, con);
 							
 							
 						}						
@@ -863,7 +879,8 @@ public class DashboardAPI {
 								+ closed_value + "\" ," + " \"RETURNED\":\"" + returned_value + "\" ,\"ASSIGNED\":\""
 								+ assigned_value + "\"  ,\"APPROVAL_PENDING\":\"" + approval_pending_value + "\" , \"INSTRUCTIONS_LEGACY\":\""
 								+ instruction_count + "\" ,\"INSTRUCTIONS_NEW\":\"" + instruction_count_new + "\" ,\"DAILY_STATUS_BY_GP_LEGACY\":\"" + dailyStatusbyGPLegacy + "\" , \"DAILY_STATUS_BY_GP_NEW\":\"" + dailyStatusbyGPNew + "\" ,\"COUNTERFILECOUNT\":\""
-								+ counterfilecount_value + "\"  ,\"PARAWISECOUNT\":\"" + parawisecount_value+"\","+yearWiseData
+								+ counterfilecount_value + "\"  ,\"COUNTERFILECOUNT_NEW\":\""
+								+ counterfilecount_new_value + "\", \"PARAWISECOUNT\":\"" + parawisecount_value+"\",\"PARAWISECOUNT_NEW\":\"" + parawisecount_new_value+"\""+yearWiseData
 								+ ", \"RSPCODE\": \"01\",\"RSPDESC\": \"SUCCESS\"}";
 						// +"\" },";
 					

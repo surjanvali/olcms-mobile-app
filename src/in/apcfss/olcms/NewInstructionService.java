@@ -555,8 +555,8 @@ public class NewInstructionService {
 					    	cases.put("DEPARTMENTS", entry.get("dept_descs").toString());
 					    	cases.put("ADVOCATE_CC_NO", entry.get("advocateccno").toString());
 					    	cases.put("ADVOCATE_NAME", entry.get("advocatename").toString());
-					    	cases.put("ACK_FILE_PATH", entry.get("ack_file_path"));
-					    	cases.put("BARCODE_FILE_PATH", entry.get("barcode_file_path"));
+					    	cases.put("ACK_FILE_PATH", "https://apolcms.ap.gov.in/uploads/scandocs/"+entry.get("ack_file_path"));
+					    	cases.put("BARCODE_FILE_PATH", "https://apolcms.ap.gov.in/uploads/scandocs/"+entry.get("barcode_file_path"));
 					    	
 							
 							casesList.put(cases);
