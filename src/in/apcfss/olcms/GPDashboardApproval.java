@@ -1202,7 +1202,7 @@ public class GPDashboardApproval {
 					casesData.put("COUNTER_AFFIDAVIT_HISTORY", counterArray);
 					
 					
-					// Para-wise remarks details...
+					// START - Para-wise remarks & Counter Filed submission section...
 					sql = "SELECT cino, case when length(petition_document) > 0 then petition_document else null end as petition_document, "
 							+ " case when length(counter_filed_document) > 0 then counter_filed_document else null end as counter_filed_document,"
 							+ " case when length(judgement_order) > 0 then judgement_order else null end as judgement_order,"
@@ -1216,6 +1216,7 @@ public class GPDashboardApproval {
 					caseDetails = DatabasePlugin.executeQuery(sql, con);
 					
 					JSONArray parawiseArray = new JSONArray();
+					JSONArray counterFiledArray = new JSONArray();
 					
 					if (caseDetails != null && !caseDetails.isEmpty() && caseDetails.size() > 0) {
 						for (Map<String, Object> entry : caseDetails) {
@@ -1223,13 +1224,13 @@ public class GPDashboardApproval {
 									&& entry.get("pwr_approved_gp") != null
 									&& entry.get("pwr_approved_gp").equals("No")) {
 								JSONObject obj = new JSONObject();
-								obj.put("PETITION_DOC_PATH", entry.get("petition_document"));
+								obj.put("PETITION_DOC_PATH", CommonModels.checkStringObject(entry.get("petition_document"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("petition_document") : "");
 								obj.put("CASE_STATUS", entry.get("ecourts_case_status"));
-								obj.put("JUDGEMENT_ORDER", entry.get("judgement_order"));
-								obj.put("ACTION_TAKEN_ORDER", entry.get("action_taken_order"));
+								obj.put("JUDGEMENT_ORDER", CommonModels.checkStringObject(entry.get("judgement_order"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("judgement_order") : "");
+								obj.put("ACTION_TAKEN_ORDER", CommonModels.checkStringObject(entry.get("action_taken_order"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("action_taken_order") : "");
 								obj.put("PWR_SUBMITTED", entry.get("pwr_uploaded"));
 								obj.put("DATE_OF_PWR_SUBMISSION", entry.get("pwr_submitted_date"));
-								obj.put("PWR_UPLOADED_COPY", entry.get("pwr_uploaded_copy"));
+								obj.put("PWR_UPLOADED_COPY", CommonModels.checkStringObject(entry.get("pwr_uploaded_copy"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("pwr_uploaded_copy") : "");
 								obj.put("PWR_APPROVED_BY_GP", entry.get("pwr_approved_gp"));
 								obj.put("PWR_GP_APPROVED_DATE", entry.get("pwr_gp_approved_date"));
 								obj.put("PWR_RECEIVED_DATE", entry.get("pwr_received_date"));
@@ -1285,10 +1286,45 @@ public class GPDashboardApproval {
 
 								parawiseArray.put(obj);
 							}
+							else if (CommonModels.checkStringObject(entry.get("action_to_perfom")).equals("Counter Affidavit")
+									&& entry.get("pwr_approved_gp") != null
+									&& entry.get("pwr_approved_gp").equals("Yes") && !CommonModels.checkStringObject(entry.get("counter_approved_gp")).equals("T")) {
+								JSONObject obj = new JSONObject();
+								obj.put("COUNTER_FILED", entry.get("counter_filed"));
+								obj.put("COUNTER_FILED_DOC_PATH", entry.get("counter_filed_document"));
+								obj.put("ACTION_TO_PERFORM", entry.get("action_to_perfom"));
+								obj.put("REMARKS", entry.get("remarks"));
+
+								
+
+								if (CommonModels.checkStringObject(entry.get("action_to_perfom")).equals("Counter Affidavit")) {
+									// a. PWR NOT APPROVED
+									if (entry.get("pwr_approved_gp") != null && entry.get("pwr_approved_gp").equals("No")) {
+										// enable upload & entry.
+										obj.put("COUNTER_SUBMISSION_BUTTON", "DISABLE");
+									}
+									// b. PWR APPROVED COUNTER NOT APPROVED
+									else if (CommonModels.checkStringObject(entry.get("pwr_approved_gp")).equals("Yes")
+											&& !CommonModels.checkStringObject(entry.get("counter_approved_gp")).equals("T")) {
+										obj.put("COUNTER_SUBMISSION_BUTTON", "ENABLE");
+									}
+									// c. COUNTER APPROVED
+									if (CommonModels.checkStringObject(entry.get("pwr_approved_gp")).equals("Yes")
+											&& CommonModels.checkStringObject(entry.get("counter_approved_gp")).equals("T")) {
+										obj.put("COUNTER_SUBMISSION_BUTTON", "DISABLE");
+									}
+								}
+
+								counterFiledArray.put(obj);
+							}
 						}
 						
 						casesData.put("PARA_WISE_REMARKS_DETAILS", parawiseArray);
+						casesData.put("COUNTER_FILED_DETAILS", counterFiledArray);
 					}
+					
+					// END - Para-wise remarks & Counter Filed submission section...
+					
 					
 					
 					
@@ -1665,7 +1701,7 @@ public class GPDashboardApproval {
 					casesData.put("COUNTER_AFFIDAVIT_HISTORY", counterArray);
 					
 					
-					// Para-wise remarks details...
+					// START - Para-wise remarks & Counter Filed submission section...
 					sql = "SELECT cino, case when length(petition_document) > 0 then petition_document else null end as petition_document, "
 							+ " case when length(counter_filed_document) > 0 then counter_filed_document else null end as counter_filed_document,"
 							+ " case when length(judgement_order) > 0 then judgement_order else null end as judgement_order,"
@@ -1679,6 +1715,7 @@ public class GPDashboardApproval {
 					caseDetails = DatabasePlugin.executeQuery(sql, con);
 					
 					JSONArray parawiseArray = new JSONArray();
+					JSONArray counterFiledArray = new JSONArray();
 					
 					if (caseDetails != null && !caseDetails.isEmpty() && caseDetails.size() > 0) {
 						for (Map<String, Object> entry : caseDetails) {
@@ -1686,13 +1723,13 @@ public class GPDashboardApproval {
 									&& entry.get("pwr_approved_gp") != null
 									&& entry.get("pwr_approved_gp").equals("No")) {
 								JSONObject obj = new JSONObject();
-								obj.put("PETITION_DOC_PATH", entry.get("petition_document"));
+								obj.put("PETITION_DOC_PATH", CommonModels.checkStringObject(entry.get("petition_document"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("petition_document") : "");
 								obj.put("CASE_STATUS", entry.get("ecourts_case_status"));
-								obj.put("JUDGEMENT_ORDER", entry.get("judgement_order"));
-								obj.put("ACTION_TAKEN_ORDER", entry.get("action_taken_order"));
+								obj.put("JUDGEMENT_ORDER", CommonModels.checkStringObject(entry.get("judgement_order"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("judgement_order") : "");
+								obj.put("ACTION_TAKEN_ORDER", CommonModels.checkStringObject(entry.get("action_taken_order"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("action_taken_order") : "");
 								obj.put("PWR_SUBMITTED", entry.get("pwr_uploaded"));
 								obj.put("DATE_OF_PWR_SUBMISSION", entry.get("pwr_submitted_date"));
-								obj.put("PWR_UPLOADED_COPY", entry.get("pwr_uploaded_copy"));
+								obj.put("PWR_UPLOADED_COPY", CommonModels.checkStringObject(entry.get("pwr_uploaded_copy"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("pwr_uploaded_copy") : "");
 								obj.put("PWR_APPROVED_BY_GP", entry.get("pwr_approved_gp"));
 								obj.put("PWR_GP_APPROVED_DATE", entry.get("pwr_gp_approved_date"));
 								obj.put("PWR_RECEIVED_DATE", entry.get("pwr_received_date"));
@@ -1748,11 +1785,44 @@ public class GPDashboardApproval {
 
 								parawiseArray.put(obj);
 							}
+							else if (CommonModels.checkStringObject(entry.get("action_to_perfom")).equals("Counter Affidavit")
+									&& entry.get("pwr_approved_gp") != null
+									&& entry.get("pwr_approved_gp").equals("Yes") && !CommonModels.checkStringObject(entry.get("counter_approved_gp")).equals("T")) {
+								JSONObject obj = new JSONObject();
+								obj.put("COUNTER_FILED", entry.get("counter_filed"));
+								obj.put("COUNTER_FILED_DOC_PATH", CommonModels.checkStringObject(entry.get("counter_filed_document"))!="" ? "https://apolcms.ap.gov.in/"+entry.get("counter_filed_document") : "");
+								obj.put("ACTION_TO_PERFORM", entry.get("action_to_perfom"));
+								obj.put("REMARKS", entry.get("remarks"));
+
+								
+
+								if (CommonModels.checkStringObject(entry.get("action_to_perfom")).equals("Counter Affidavit")) {
+									// a. PWR NOT APPROVED
+									if (entry.get("pwr_approved_gp") != null && entry.get("pwr_approved_gp").equals("No")) {
+										// enable upload & entry.
+										obj.put("COUNTER_SUBMISSION_BUTTON", "DISABLE");
+									}
+									// b. PWR APPROVED COUNTER NOT APPROVED
+									else if (CommonModels.checkStringObject(entry.get("pwr_approved_gp")).equals("Yes")
+											&& !CommonModels.checkStringObject(entry.get("counter_approved_gp")).equals("T")) {
+										obj.put("COUNTER_SUBMISSION_BUTTON", "ENABLE");
+									}
+									// c. COUNTER APPROVED
+									if (CommonModels.checkStringObject(entry.get("pwr_approved_gp")).equals("Yes")
+											&& CommonModels.checkStringObject(entry.get("counter_approved_gp")).equals("T")) {
+										obj.put("COUNTER_SUBMISSION_BUTTON", "DISABLE");
+									}
+								}
+
+								counterFiledArray.put(obj);
+							}
 						}
 						
 						casesData.put("PARA_WISE_REMARKS_DETAILS", parawiseArray);
+						casesData.put("COUNTER_FILED_DETAILS", counterFiledArray);
 					}
 					
+					// END - Para-wise remarks & Counter Filed submission section...
 					
 					
 					
