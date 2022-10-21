@@ -2061,7 +2061,16 @@ public class GPDashboardApproval {
 				
 				msg = "Case details ("+cino+") updated successfully.";
 				
-				sql="insert into ecourts_olcms_case_details_log select * from ecourts_olcms_case_details where cino='"+cino+"'";
+				sql="insert into ecourts_olcms_case_details_log (cino , petition_document ,  counter_filed_document  , judgement_order,action_taken_order ,last_updated_by , "
+						+ "last_updated_on, counter_filed , remarks, ecourts_case_status , corresponding_gp , pwr_uploaded, pwr_submitted_date ,pwr_received_date,"
+						+ "pwr_approved_gp,pwr_gp_approved_date, appeal_filed ,appeal_filed_copy,  appeal_filed_date , pwr_uploaded_copy , counter_approved_gp ,"
+						+ "action_to_perfom , counter_approved_date , counter_approved_by , respondent_slno ,cordered_impl_date, dismissed_copy , "
+						+ "final_order_status, no_district_updated , is_orderimplemented , counter_filed_date) "
+						+ " select cino , petition_document ,  counter_filed_document  , judgement_order,action_taken_order ,last_updated_by , "
+						+ "last_updated_on, counter_filed , remarks, ecourts_case_status , corresponding_gp , pwr_uploaded, pwr_submitted_date ,pwr_received_date,"
+						+ "pwr_approved_gp,pwr_gp_approved_date, appeal_filed ,appeal_filed_copy,  appeal_filed_date , pwr_uploaded_copy , counter_approved_gp ,"
+						+ "action_to_perfom , counter_approved_date , counter_approved_by , respondent_slno ,cordered_impl_date, dismissed_copy , "
+						+ "final_order_status, no_district_updated , is_orderimplemented , counter_filed_date from ecourts_olcms_case_details where cino='"+cino+"'";
 				a += DatabasePlugin.executeUpdate(sql, con);
 				String sqlCondition2="";
 				
@@ -2138,7 +2147,7 @@ public class GPDashboardApproval {
 				
 				if (a > 0) {
 					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks) "
-							+ " values ('" + cino + "','"+actionPerformed+"', '"+userId+"', NULL, 'remarks')";
+							+ " values ('" + cino + "','"+actionPerformed+"', '"+userId+"', NULL, '"+remarks+"')";
 					DatabasePlugin.executeUpdate(sql, con);
 					
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Success\" }}";
@@ -2278,7 +2287,16 @@ public class GPDashboardApproval {
 					//msg = "Parawise Remarks Returned for Case ("+cIno+").";
 				}
 				
-				sql="insert into ecourts_olcms_case_details_log select * from ecourts_olcms_case_details where cino='"+cino+"'";
+				sql="insert into ecourts_olcms_case_details_log (cino , petition_document ,  counter_filed_document  , judgement_order,action_taken_order ,last_updated_by , "
+						+ "last_updated_on, counter_filed , remarks, ecourts_case_status , corresponding_gp , pwr_uploaded, pwr_submitted_date ,pwr_received_date,"
+						+ "pwr_approved_gp,pwr_gp_approved_date, appeal_filed ,appeal_filed_copy,  appeal_filed_date , pwr_uploaded_copy , counter_approved_gp ,"
+						+ "action_to_perfom , counter_approved_date , counter_approved_by , respondent_slno ,cordered_impl_date, dismissed_copy , "
+						+ "final_order_status, no_district_updated , is_orderimplemented , counter_filed_date) "
+						+ " select cino , petition_document ,  counter_filed_document  , judgement_order,action_taken_order ,last_updated_by , "
+						+ "last_updated_on, counter_filed , remarks, ecourts_case_status , corresponding_gp , pwr_uploaded, pwr_submitted_date ,pwr_received_date,"
+						+ "pwr_approved_gp,pwr_gp_approved_date, appeal_filed ,appeal_filed_copy,  appeal_filed_date , pwr_uploaded_copy , counter_approved_gp ,"
+						+ "action_to_perfom , counter_approved_date , counter_approved_by , respondent_slno ,cordered_impl_date, dismissed_copy , "
+						+ "final_order_status, no_district_updated , is_orderimplemented , counter_filed_date from ecourts_olcms_case_details where cino='"+cino+"'";
 				a += DatabasePlugin.executeUpdate(sql, con);
 				
 				if (a > 0) {
