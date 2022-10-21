@@ -1980,4 +1980,329 @@ public class GPDashboardApproval {
 
 	}
 	
+	
+	
+	
+	
+	
+	@POST
+	@Consumes({MediaType.MULTIPART_FORM_DATA})
+	@Path("/gpApprove")
+	public Response gpApprove(@FormDataParam("pwrDoc") InputStream pwrDoc,
+			@FormDataParam("pwrDoc") FormDataBodyPart pwrDocBody, @FormDataParam("counterDoc") InputStream counterDoc,
+			@FormDataParam("counterDoc") FormDataBodyPart counterDocBody, @FormDataParam("cino") String cino,
+			@FormDataParam("dailyStatus") String dailyStatus, @FormDataParam("deptCode") String deptCode,
+			@FormDataParam("distCode") String distCode, @FormDataParam("roleId") String roleId,
+			@FormDataParam("userId") String userId, @FormDataParam("remarks") String remarks,
+			@FormDataParam("actionToPerform") String actionToPerform) throws Exception {
+
+		Connection con = null;
+		PreparedStatement ps = null;
+		String jsonStr = "";
+		String sql = "",msg = "";
+
+		try {
+			
+			if (cino == null || cino.equals("")) {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- cino is missing in the request.\" }}";
+			} 
+			else if (actionToPerform == null || actionToPerform.equals("")) {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- actionToPerform is missing in the request.\" }}";
+			}
+			else {	
+			if (cino != null && !cino.equals("")) {
+				
+				con = DatabasePlugin.connect();
+				con.setAutoCommit(false);
+				
+				sql="select dept_code,dist_id from ecourts_case_data where cino='"+cino+"'";
+				String deptCodeC="", distCodeC="", newStatus="", assigned2Emp="";
+				
+				List<Map> caseData = DatabasePlugin.executeQuery(con, sql);
+				
+				if(caseData!=null) {
+					Map datainner = (Map)caseData.get(0);
+					deptCodeC = CommonModels.checkStringObject(datainner.get("dept_code"));
+					distCodeC = CommonModels.checkStringObject(datainner.get("dist_id"));
+					System.out.println("deptCodeC::"+deptCodeC);
+					System.out.println("distCodeC::"+distCodeC);
+					if(deptCodeC.contains("01") && (distCodeC.equals("") || distCodeC.equals("0"))) {//SECTION SECT DEPT
+						newStatus="5";
+						sql="select inserted_by from ecourts_case_activities where cino='"+cino+"' and action_type='CASE FORWARDED' and assigned_to in (select emailid from mlo_details where user_id='"+deptCodeC+"') order by inserted_on desc limit 1";
+						msg = "Returned Case to Section Officer (Sect. Dept.)";
+					}
+					else if(!deptCodeC.contains("01") && (distCodeC.equals("") || distCodeC.equals("0"))) {//SECTION HOD
+						newStatus="9";
+						msg = "Returned Case to Section Officer (HOD)";
+						sql="select inserted_by from ecourts_case_activities where cino='"+cino+"' and action_type='CASE FORWARDED' "
+								+ "and assigned_to in (select emailid from nodal_officer_details where dept_id='"+deptCodeC+"'  and coalesce(dist_id,0) = 0) order by inserted_on desc limit 1";
+						
+					}
+					else if(!distCodeC.equals("") && !distCodeC.equals("0")) {//SECTION DIST
+						newStatus="10";
+						msg = "Returned Case to Section Officer (District)";
+						sql="select inserted_by from ecourts_case_activities where cino='"+cino+"' and action_type='CASE FORWARDED' "
+								+ "and assigned_to in (select emailid from nodal_officer_details where dept_id='"+deptCodeC+"' and coalesce(dist_id,0) > 0) order by inserted_on desc limit 1";
+						
+					}
+					
+					System.out.println("assigned2Emp::"+sql);
+					assigned2Emp = DatabasePlugin.getSingleValue(con, sql);
+				}
+				
+				
+				
+				String petition_document = "",filePath="", newFileName="", counter_filed_document="", action_taken_order="", judgement_order="", appeal_filed_copy="", pwr_uploaded_copy="";
+				
+				int a = 0;
+				String updateSql="";
+				String actionPerformed="";
+				actionPerformed = !CommonModels.checkStringObject(actionToPerform).equals("") && !CommonModels.checkStringObject(actionToPerform).equals("0") ?  actionToPerform+" Approved"  : "CASE DETAILS UPDATED";
+				
+				msg = "Case details ("+cino+") updated successfully.";
+				
+				sql="insert into ecourts_olcms_case_details_log select * from ecourts_olcms_case_details where cino='"+cino+"'";
+				a += DatabasePlugin.executeUpdate(sql, con);
+				String sqlCondition2="";
+				
+				if(actionToPerform.equals("Parawise Remarks")) {
+					
+					if(pwrDoc!=null  && !pwrDoc.equals("")) {
+						
+						
+						newFileName="parawiseremarks_"+CommonModels.randomTransactionNo()+"."+pwrDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/parawiseremarks/"+newFileName;
+						String fileUploadPath = "uploads/parawiseremarks/"+newFileName;
+						
+						writeToFile(pwrDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','GP Approved Parawise Remarks','"+userId+"', 'MOBILE APP', '"+remarks+"', '"+pwr_uploaded_copy+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2 = ", pwr_uploaded_copy='"+pwr_uploaded_copy+"'";
+					}
+					
+					sql="update ecourts_olcms_case_details set pwr_approved_gp='Yes',pwr_gp_approved_date=current_date"
+							+", remarks='" + remarks
+							+ "', last_updated_by='" + userId + "', last_updated_on=now() " + sqlCondition2
+							+ "  where cino='"+cino+"'";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+					
+					sql="update ecourts_case_data set case_status='"+newStatus+"' where cino='"+cino+"'";
+					sql="update ecourts_case_data set  case_status="+newStatus+", assigned_to='"+assigned2Emp+"' where cino='"+cino+"' ";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+					
+					msg = "Parawise Remarks Approved successfully for Case ("+cino+").";
+				}
+				else if(actionToPerform.equals("Counter Affidavit")) {
+					
+					
+					if(counterDoc!=null  && !counterDoc.equals("")) {
+						
+						
+						newFileName="counter_"+CommonModels.randomTransactionNo()+"."+counterDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/counters/"+newFileName;
+						String fileUploadPath = "uploads/counters/"+newFileName;
+						
+						writeToFile(counterDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','Counter finalized by GP','"+userId+"', 'MOBILE APP', '"+remarks+"', '"+counter_filed_document+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2=", counter_filed_document='" + counter_filed_document + "'";
+					}
+					
+					
+					
+					msg = "Counter Affidavit finalized successfully for Case ("+cino+").";
+					
+					sql = "update ecourts_olcms_case_details set counter_approved_gp='T',counter_approved_date=current_date, counter_approved_by='"
+							+ userId + "', remarks='" + remarks + "', last_updated_by='" + userId
+							+ "', last_updated_on=now()" + "" + sqlCondition2
+							+ " where cino='" + cino + "'";
+					System.out.println("COUNTER SQL:"+sql);
+					a += DatabasePlugin.executeUpdate(sql, con);
+				}
+				
+				if (a > 0) {
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks) "
+							+ " values ('" + cino + "','"+actionPerformed+"', '"+userId+"', 'MOBILE APP', 'remarks')";
+					DatabasePlugin.executeUpdate(sql, con);
+					
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Success\" }}";
+					con.commit();
+				} else {
+					con.rollback();
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Error while submission. Please check.\" }}";
+				}
+			}
+			
+			}
+			
+		}	catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	
+	
+	
+	
+	
+	@POST
+	@Consumes({MediaType.MULTIPART_FORM_DATA})
+	@Path("/gpReject")
+	public Response gpReject(@FormDataParam("pwrDoc") InputStream pwrDoc,
+			@FormDataParam("pwrDoc") FormDataBodyPart pwrDocBody, @FormDataParam("counterDoc") InputStream counterDoc,
+			@FormDataParam("counterDoc") FormDataBodyPart counterDocBody, @FormDataParam("cino") String cino,
+			@FormDataParam("dailyStatus") String dailyStatus, @FormDataParam("deptCode") String deptCode,
+			@FormDataParam("distCode") String distCode, @FormDataParam("roleId") String roleId,
+			@FormDataParam("userId") String userId, @FormDataParam("remarks") String remarks,
+			@FormDataParam("actionToPerform") String actionToPerform, @FormDataParam("counterFiled") String counterFiled, 
+			@FormDataParam("pwrSubmitted") String pwrSubmitted) throws Exception {
+
+		Connection con = null;
+		PreparedStatement ps = null;
+		String jsonStr = "";
+		String sql = "",msg = "";
+		int a=0;
+
+		try {
+			
+			if (cino == null || cino.equals("")) {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- cino is missing in the request.\" }}";
+			} 
+			else if (actionToPerform == null || actionToPerform.equals("")) {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- actionToPerform is missing in the request.\" }}";
+			}
+			else {	
+			if (cino != null && !cino.equals("")) {
+				
+				con = DatabasePlugin.connect();
+				con.setAutoCommit(false);
+				
+				sql="select dept_code,dist_id from ecourts_case_data where cino='"+cino+"'";
+				String deptCodeC="", distCodeC="", newStatus="", assigned2Emp="";
+				String actionPerformed="";
+				actionPerformed = !CommonModels.checkStringObject(actionToPerform).equals("") && !CommonModels.checkStringObject(actionToPerform).equals("0") ?  actionToPerform+" Returned"  : "CASE DETAILS UPDATED";
+				
+				List<Map> caseData = DatabasePlugin.executeQuery(con, sql);
+				
+				if(caseData!=null) {
+					Map datainner = (Map)caseData.get(0);
+					deptCodeC = CommonModels.checkStringObject(datainner.get("dept_code"));
+					distCodeC = CommonModels.checkStringObject(datainner.get("dist_id"));
+					System.out.println("deptCodeC::"+deptCodeC);
+					System.out.println("distCodeC::"+distCodeC);
+					if(deptCodeC.contains("01") && (distCodeC.equals("") || distCodeC.equals("0"))) {//SECTION SECT DEPT
+						newStatus="5";
+						sql="select inserted_by from ecourts_case_activities where cino='"+cino+"' and action_type='CASE FORWARDED' and assigned_to in (select emailid from mlo_details where user_id='"+deptCodeC+"') order by inserted_on desc limit 1";
+						msg = "Returned Case to Section Officer (Sect. Dept.)";
+					}
+					else if(!deptCodeC.contains("01") && (distCodeC.equals("") || distCodeC.equals("0"))) {//SECTION HOD
+						newStatus="9";
+						msg = "Returned Case to Section Officer (HOD)";
+						sql="select inserted_by from ecourts_case_activities where cino='"+cino+"' and action_type='CASE FORWARDED' "
+								+ "and assigned_to in (select emailid from nodal_officer_details where dept_id='"+deptCodeC+"'  and coalesce(dist_id,0) = 0) order by inserted_on desc limit 1";
+						
+					}
+					else if(!distCodeC.equals("") && !distCodeC.equals("0")) {//SECTION DIST
+						newStatus="10";
+						msg = "Returned Case to Section Officer (District)";
+						sql="select inserted_by from ecourts_case_activities where cino='"+cino+"' and action_type='CASE FORWARDED' "
+								+ "and assigned_to in (select emailid from nodal_officer_details where dept_id='"+deptCodeC+"' and coalesce(dist_id,0) > 0) order by inserted_on desc limit 1";
+						
+					}
+					
+					System.out.println("assigned2Emp::"+sql);
+					assigned2Emp = DatabasePlugin.getSingleValue(con, sql);
+				}
+				
+				
+				
+				if(actionToPerform.equals("Parawise Remarks")) {
+					//pwr_approved='F',
+					sql="update ecourts_case_data set  case_status="+newStatus+", assigned_to='"+assigned2Emp+"' "
+							+ ",section_officer_updated=null, mlo_no_updated=null where cino='"+cino+"' and section_officer_updated='T' and mlo_no_updated='T' ";
+					System.out.println("SQL:"+sql);
+					a = DatabasePlugin.executeUpdate(sql, con);
+					
+					//msg = "Parawise Remarks Returned for Case ("+cIno+").";
+				}
+				else if(actionToPerform.equals("Counter Affidavit")) {
+					// counter_approved='F',
+					sql="update ecourts_case_data set case_status="+newStatus+",assigned_to='"+assigned2Emp+"',section_officer_updated=null , mlo_no_updated=null "
+							+ "where cino='"+cino+"' and section_officer_updated='T' and mlo_no_updated='T' ";
+					System.out.println("SQL:"+sql);
+					a = DatabasePlugin.executeUpdate(sql, con);
+					
+					//msg = "Counter Affidavit Returned for Case ("+cIno+").";
+				}
+				else if (CommonModels.checkStringObject(counterFiled).equals("Yes")) {
+					//pwr_approved='F', counter_approved='F',
+					sql="update ecourts_case_data set  case_status="+newStatus+", assigned_to='"+assigned2Emp+"' where cino='"+cino+"' and section_officer_updated='T' and mlo_no_updated='T' ";
+					System.out.println("SQL:"+sql);
+					a = DatabasePlugin.executeUpdate(sql, con);
+					//msg = "Counter Affidavit Returned for Case ("+cIno+").";
+					
+					sql="update ecourts_olcms_case_details set counter_approved_gp='F' where cino='"+cino+"'";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+				}
+				else if (CommonModels.checkStringObject(counterFiled).equals("No") && CommonModels.checkStringObject(pwrSubmitted).equals("Yes")) {
+					//pwr_approved='F',
+					sql="update ecourts_case_data set  case_status="+newStatus+", assigned_to='"+assigned2Emp+"' where cino='"+cino+"' and section_officer_updated='T' and mlo_no_updated='T' ";
+					System.out.println("SQL:"+sql);
+					a = DatabasePlugin.executeUpdate(sql, con);
+					
+					//msg = "Parawise Remarks Returned for Case ("+cIno+").";
+				}
+				
+				sql="insert into ecourts_olcms_case_details_log select * from ecourts_olcms_case_details where cino='"+cino+"'";
+				a += DatabasePlugin.executeUpdate(sql, con);
+				
+				if (a > 0) {
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks, assigned_to) "
+							+ " values ('" + cino + "','"+actionPerformed+"', '"+userId+"', 'MOBILE APP', '"+remarks+"','"+assigned2Emp+"')";
+					DatabasePlugin.executeUpdate(sql, con);
+					
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Success.\" }}";
+					con.commit();
+				} else {
+					con.rollback();
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error in submission.\" }}";
+				}
+			}
+			
+			}
+			
+		}	catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
 }
