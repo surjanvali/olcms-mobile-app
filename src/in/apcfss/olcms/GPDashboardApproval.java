@@ -2074,6 +2074,8 @@ public class GPDashboardApproval {
 						
 						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/parawiseremarks/"+newFileName;
 						
+						//String uploadedFileLocation = "C://chatapp/uploads/parawiseremarks/"+newFileName;
+						
 						String fileUploadPath = "uploads/parawiseremarks/"+newFileName;
 						
 						writeToFile(pwrDoc, uploadedFileLocation);
@@ -2093,9 +2095,10 @@ public class GPDashboardApproval {
 					a += DatabasePlugin.executeUpdate(sql, con);
 					
 					
-					sql="update ecourts_case_data set case_status='"+newStatus+"' where cino='"+cino+"'";
-					sql="update ecourts_case_data set  case_status="+newStatus+", assigned_to='"+assigned2Emp+"' where cino='"+cino+"' ";
-					a += DatabasePlugin.executeUpdate(sql, con);
+					if(newStatus!="") {
+						sql="update ecourts_case_data set  case_status="+newStatus+", assigned_to='"+assigned2Emp+"' where cino='"+cino+"' ";
+						a += DatabasePlugin.executeUpdate(sql, con);
+					}
 					
 					
 					msg = "Parawise Remarks Approved successfully for Case ("+cino+").";
@@ -2115,7 +2118,7 @@ public class GPDashboardApproval {
 						
 						
 						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks, uploaded_doc_path ) "
-								+ "values ('" + cino + "','Counter finalized by GP','"+userId+"', 'MOBILE APP', '"+remarks+"', '"+fileUploadPath+"')";
+								+ "values ('" + cino + "','Counter finalized by GP','"+userId+"', NULL, '"+remarks+"', '"+fileUploadPath+"')";
 						DatabasePlugin.executeUpdate(sql, con);
 						
 						sqlCondition2=", counter_filed_document='" + fileUploadPath + "'";
@@ -2135,7 +2138,7 @@ public class GPDashboardApproval {
 				
 				if (a > 0) {
 					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks) "
-							+ " values ('" + cino + "','"+actionPerformed+"', '"+userId+"', 'MOBILE APP', 'remarks')";
+							+ " values ('" + cino + "','"+actionPerformed+"', '"+userId+"', NULL, 'remarks')";
 					DatabasePlugin.executeUpdate(sql, con);
 					
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Success\" }}";
