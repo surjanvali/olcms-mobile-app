@@ -2052,7 +2052,7 @@ public class GPDashboardApproval {
 				
 				
 				
-				String petition_document = "",filePath="", newFileName="", counter_filed_document="", action_taken_order="", judgement_order="", appeal_filed_copy="", pwr_uploaded_copy="";
+				String petition_document = "",filePath="", newFileName="", counter_filed_document="", action_taken_order="", judgement_order="", appeal_filed_copy="";
 				
 				int a = 0;
 				String updateSql="";
@@ -2073,16 +2073,17 @@ public class GPDashboardApproval {
 						newFileName="parawiseremarks_"+CommonModels.randomTransactionNo()+"."+pwrDocBody.getMediaType().getSubtype();
 						
 						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/parawiseremarks/"+newFileName;
+						
 						String fileUploadPath = "uploads/parawiseremarks/"+newFileName;
 						
 						writeToFile(pwrDoc, uploadedFileLocation);
 						
 						
 						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks, uploaded_doc_path ) "
-								+ "values ('" + cino + "','GP Approved Parawise Remarks','"+userId+"', 'MOBILE APP', '"+remarks+"', '"+pwr_uploaded_copy+"')";
+								+ "values ('" + cino + "','GP Approved Parawise Remarks','"+userId+"', NULL , '"+remarks+"', '"+fileUploadPath+"')";
 						DatabasePlugin.executeUpdate(sql, con);
 						
-						sqlCondition2 = ", pwr_uploaded_copy='"+pwr_uploaded_copy+"'";
+						sqlCondition2 = ", pwr_uploaded_copy='"+fileUploadPath+"'";
 					}
 					
 					sql="update ecourts_olcms_case_details set pwr_approved_gp='Yes',pwr_gp_approved_date=current_date"
@@ -2114,10 +2115,10 @@ public class GPDashboardApproval {
 						
 						
 						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks, uploaded_doc_path ) "
-								+ "values ('" + cino + "','Counter finalized by GP','"+userId+"', 'MOBILE APP', '"+remarks+"', '"+counter_filed_document+"')";
+								+ "values ('" + cino + "','Counter finalized by GP','"+userId+"', 'MOBILE APP', '"+remarks+"', '"+fileUploadPath+"')";
 						DatabasePlugin.executeUpdate(sql, con);
 						
-						sqlCondition2=", counter_filed_document='" + counter_filed_document + "'";
+						sqlCondition2=", counter_filed_document='" + fileUploadPath + "'";
 					}
 					
 					
