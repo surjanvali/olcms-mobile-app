@@ -72,7 +72,7 @@ public class VersionCheckAPI {
 						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Success\" }}";
 					}
 					else {
-						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Failure\" }}";
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Please update the app to the latest version from Playstore\" }}";
 					}
 					
 				} 
