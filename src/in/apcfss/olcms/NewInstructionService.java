@@ -856,4 +856,293 @@ public class NewInstructionService {
 		}
 	}
 	
+	
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/displayDailyStatusByGPLegacy")
+	public static Response displayDailyStatusByGPLegacy(String incomingData) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} 
+				else {
+
+					String sql = null, sqlCondition = "", roleId = "", distId = "", deptCode = "", userId = "", Condition = "", ackNo = "" ;
+
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					userId = jObject.get("USER_ID").toString();
+					
+					
+					if (jObject.has("DOF_FROM_DATE") &&  jObject.get("DOF_FROM_DATE")!= null && !jObject.get("DOF_FROM_DATE").toString().equals("")) {
+						sqlCondition += " and date_of_filing >= to_date('" + jObject.get("DOF_FROM_DATE").toString() + "','dd-mm-yyyy') ";
+					}
+					if (jObject.has("DOF_TO_DATE") &&  jObject.get("DOF_TO_DATE")!= null && !jObject.get("DOF_TO_DATE").toString().equals("")) {
+						sqlCondition += " and date_of_filing <= to_date('" + jObject.get("DOF_TO_DATE").toString() + "','dd-mm-yyyy') ";
+					}
+					if (jObject.has("PURPOSE") &&  jObject.get("PURPOSE")!= null && !jObject.get("PURPOSE").toString().equals("")) {
+						sqlCondition += " and trim(purpose_name)='" + jObject.get("PURPOSE").toString() + "' ";
+					}
+					if (jObject.has("DISTRICT_NAME") && jObject.get("DISTRICT_NAME") != null
+							&& !jObject.get("DISTRICT_NAME").toString().equals("")
+							&& !jObject.get("DISTRICT_NAME").toString().equals("0")) {
+						sqlCondition += " and trim(dist_name)='" + jObject.get("DISTRICT_NAME").toString().trim()
+								+ "' ";
+					}
+
+
+					if (jObject.has("REG_YEAR") && jObject.get("REG_YEAR") != null
+							&& !jObject.get("REG_YEAR").toString().equals("")
+							&& !jObject.get("REG_YEAR").toString().equals("ALL")
+							&& !jObject.get("REG_YEAR").toString().equals("0")) {
+						sqlCondition += " and reg_year='" + jObject.get("REG_YEAR").toString() + "' ";
+					}
+					
+											
+					if(!roleId.equals("2")) { //District Nodal Officer
+						sqlCondition +=" and dept_code='" + deptCode + "' ";
+					}
+
+					if(roleId.equals("2") || roleId.equals("12")) { //District Collector
+
+						sqlCondition +="  and dist_id='"+distId+"'";//and case_status=7
+					}
+					else if(roleId.equals("10")) { //District Nodal Officer
+						sqlCondition +=" and dist_id='"+distId+"'";// and case_status=8
+					}
+					else if(roleId.equals("5") || roleId.equals("9")) {//NO & HOD
+						//sqlCondition +=" and case_status in (3,4)";
+					}
+					else if(roleId.equals("3") || roleId.equals("4")) {//MLO & Sect. Dept.
+						//sqlCondition +=" and (case_status is null or case_status in (1, 2))";
+					}
+					else if(roleId.equals("8") || roleId.equals("11") || roleId.equals("12")) {
+						sqlCondition +="  and assigned_to='"+userId+"'";
+					}
+
+					sql= " select b.legacy_ack_flag,a.* from ecourts_case_data a inner join (select distinct cino,legacy_ack_flag from ecourts_dept_instructions where legacy_ack_flag='Legacy') b on (a.cino=b.cino) where coalesce(ecourts_case_status,'')!='Closed' "+sqlCondition+" order by 1";
+
+						
+						System.out.println("ecourts SQL:" + sql);
+						
+					
+					JSONObject casesData = new JSONObject();
+
+					con = DatabasePlugin.connect();
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+					
+					JSONArray casesList = new JSONArray();
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("CINO", entry.get("cino"));
+					    	
+							cases.put("DATE_OF_FILING", entry.get("date_of_filing"));
+							cases.put("CASE_TYPE", entry.get("type_name_fil"));
+							cases.put("REG_NO", entry.get("reg_no"));
+							cases.put("REG_YEAR", entry.get("reg_year"));
+							cases.put("PETITIONER_NAME", entry.get("pet_name"));
+							cases.put("DIST_NAME", entry.get("dist_name"));
+							cases.put("PURPOSE", entry.get("purpose_name"));
+							cases.put("RESPONDENTS", entry.get("res_name"));
+							cases.put("PET_ADV", entry.get("pet_adv"));
+							cases.put("RES_ADV", entry.get("res_adv"));
+					    	
+							
+							casesList.put(cases);
+						}
+					}
+					casesData.put("CASES_LIST", casesList);
+					
+					String finalString = casesData.toString();
+					
+					if (casesData.length()>0)						
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Legacy case details retrived successfully\"  , "
+								+ finalString.substring(1, finalString.length() - 1) + "}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+								+ finalString.substring(1, finalString.length() - 1) + " }}";
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/displayDailyStatusByGPNew")
+	public static Response displayDailyStatusByGPNew(String incomingData) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} 
+				else {
+
+					String sql = null, sqlCondition = "", roleId = "", distId = "", deptCode = "", userId = "", Condition = "", ackNo = "" ;
+
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					userId = jObject.get("USER_ID").toString();
+					
+					if (jObject.has("DOF_FROM_DATE") &&  jObject.get("DOF_FROM_DATE")!= null && !jObject.get("DOF_FROM_DATE").toString().equals("")) {
+						sqlCondition += " and date_of_filing >= to_date('" + jObject.get("DOF_FROM_DATE").toString() + "','dd-mm-yyyy') ";
+					}
+					if (jObject.has("DOF_TO_DATE") &&  jObject.get("DOF_TO_DATE")!= null && !jObject.get("DOF_TO_DATE").toString().equals("")) {
+						sqlCondition += " and date_of_filing <= to_date('" + jObject.get("DOF_TO_DATE").toString() + "','dd-mm-yyyy') ";
+					}
+					if (jObject.has("PURPOSE") &&  jObject.get("PURPOSE")!= null && !jObject.get("PURPOSE").toString().equals("")) {
+						sqlCondition += " and trim(purpose_name)='" + jObject.get("PURPOSE").toString() + "' ";
+					}
+					if (jObject.has("DISTRICT_NAME") && jObject.get("DISTRICT_NAME") != null
+							&& !jObject.get("DISTRICT_NAME").toString().equals("")
+							&& !jObject.get("DISTRICT_NAME").toString().equals("0")) {
+						sqlCondition += " and trim(dist_name)='" + jObject.get("DISTRICT_NAME").toString().trim()
+								+ "' ";
+					}
+
+
+					if (jObject.has("REG_YEAR") && jObject.get("REG_YEAR") != null
+							&& !jObject.get("REG_YEAR").toString().equals("")
+							&& !jObject.get("REG_YEAR").toString().equals("ALL")
+							&& !jObject.get("REG_YEAR").toString().equals("0")) {
+						sqlCondition += " and reg_year='" + jObject.get("REG_YEAR").toString() + "' ";
+					}
+					
+					
+											
+					if(!roleId.equals("2")) { //District Nodal Officer
+						sqlCondition +=" and dept_code='" + deptCode + "' ";
+					}
+
+					if(roleId.equals("2") || roleId.equals("12")) { //District Collector
+
+						sqlCondition +="  and dist_id='"+distId+"'";//and case_status=7
+					}
+					else if(roleId.equals("10")) { //District Nodal Officer
+						sqlCondition +=" and dist_id='"+distId+"'";// and case_status=8
+					}
+					else if(roleId.equals("5") || roleId.equals("9")) {//NO & HOD
+						//sqlCondition +=" and case_status in (3,4)";
+					}
+					else if(roleId.equals("3") || roleId.equals("4")) {//MLO & Sect. Dept.
+						//sqlCondition +=" and (case_status is null or case_status in (1, 2))";
+					}
+					else if(roleId.equals("8") || roleId.equals("11") || roleId.equals("12")) {
+						sqlCondition +="  and assigned_to='"+userId+"'";
+					}
+
+
+					sql= " select b.legacy_ack_flag,(SELECT district_name FROM district_mst dm where (e.dist_id=dm.district_id) ) as district_name,a.* from ecourts_gpo_ack_depts e inner join ecourts_gpo_ack_dtls a on (e.ack_no=a.ack_no)  inner join (select distinct cino,legacy_ack_flag from ecourts_dept_instructions where legacy_ack_flag='New') b on (e.ack_no=b.cino) where coalesce(ecourts_case_status,'')!='Closed' "+sqlCondition+" order by 1";
+
+					System.out.println("ecourts SQL:" + sql);
+						
+					
+					JSONObject casesData = new JSONObject();
+
+					con = DatabasePlugin.connect();
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+					
+					JSONArray casesList = new JSONArray();
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("ACK_NO", entry.get("ack_no"));					    	
+							cases.put("MAIN_CASE_NO", entry.get("maincaseno"));
+							cases.put("PET_NAME", entry.get("petitioner_name"));
+							cases.put("DIST_NAME", entry.get("district_name"));
+							cases.put("ADVOCATE_NAME", entry.get("advocatename"));
+							cases.put("ADVOCATE_CCNO", entry.get("advocateccno"));
+					    	
+							
+							casesList.put(cases);
+						}
+					}
+					casesData.put("CASES_LIST", casesList);
+					
+					String finalString = casesData.toString();
+					
+					if (casesData.length()>0)						
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"New case details retrived successfully\"  , "
+								+ finalString.substring(1, finalString.length() - 1) + "}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+								+ finalString.substring(1, finalString.length() - 1) + " }}";
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
+	
+	
 }
