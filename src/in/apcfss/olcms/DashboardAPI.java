@@ -355,11 +355,14 @@ public class DashboardAPI {
 								closedcases_value=Long.toString(closedcases);
 							}	
 							
+							
 							sql="select count(*) as total, "
-									+ "sum(case when (case_status is null or case_status=1) and coalesce(assigned,'f')='f' then 1 else 0 end) as assignment_pending,"
-									+ "sum(case when (case_status=1) and coalesce(assigned,'f')='t' then 1 else 0 end) as approval_pending,"
-									+ "sum(case when case_status=99 then 1 else 0 end) as closedcases"
-									+ " from ecourts_gpo_ack_dtls ad1 inner join ecourts_gpo_ack_depts ad2 on (ad1.ack_no=ad2.ack_no)  where ack_type='NEW' and ad2.dept_code='"+deptCode+"'";
+									+ "sum(case when (case_status is null or case_status in (1, 2)) and coalesce(assigned,'f')='f' then 1 else 0 end) as assignment_pending,"
+									+ "sum(case when (case_status=1) and coalesce(ad2.ecourts_case_status,'')!='Closed' and coalesce(assigned,'f')='t' then 1 else 0 end) as approval_pending,"
+									+ "sum(case when (case_status=99 or coalesce(ad2.ecourts_case_status,'')='Closed') then 1 else 0 end) as closedcases"
+									+ " from ecourts_gpo_ack_dtls ad1 inner join ecourts_gpo_ack_depts ad2 on (ad1.ack_no=ad2.ack_no) "
+									+ " inner join dept_new d on (ad2.dept_code=d.dept_code)  where ack_type='NEW' and (d.dept_code='"+deptCode+"' or d.reporting_dept_code='"+deptCode+"') ";
+							
 							
 							dashboardCounts = DatabasePlugin.executeQuery(sql,con);
 							total_cases=(Long) ((Map) dashboardCounts.get(0)).get("total");
