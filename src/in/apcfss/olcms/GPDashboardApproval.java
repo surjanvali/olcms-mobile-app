@@ -1106,7 +1106,9 @@ public class GPDashboardApproval {
 					
 					
 					// Dept. Instructions
-					sql = "select instructions, to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time from ecourts_dept_instructions where cino='" + cino + "'  order by 1 ";
+					//sql = "select instructions, to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time from ecourts_dept_instructions where cino='" + cino + "'  order by 1 ";
+					sql = "select cino,instructions, to_char(insert_time,'dd-Mon-yyyy hh24:mi:ss PM') as insert_time,coalesce(insert_by,'0') as insert_by,legacy_ack_flag,coalesce(upload_fileno,'-') as upload_fileno from ecourts_dept_instructions where cino='" + cino + "'  order by insert_time desc  ";
+					
 					System.out.println("Dept INstructions sql--" + sql);
 					List<Map<String, Object>> existData = DatabasePlugin.executeQuery(sql, con);
 					JSONArray instructionsArray = new JSONArray();
@@ -1115,7 +1117,14 @@ public class GPDashboardApproval {
 							JSONObject obj = new JSONObject();
 							obj.put("DESCRIPTION",entry.get("instructions") !=null ? entry.get("instructions").toString() :"");
 							obj.put("SUBMITTED_DATE",entry.get("insert_time") !=null ? entry.get("insert_time").toString() :"");
-
+							obj.put("SUBMITTED_BY",entry.get("insert_by") !=null ? entry.get("insert_by").toString() :"");
+							if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
+								obj.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
+					    		
+					    	} else {
+					    		obj.put("UPLOADED_FILE_PATH", "");
+					    		
+					    	}
 							instructionsArray.put(obj);
 						}
 					}
