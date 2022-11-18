@@ -343,7 +343,7 @@ public class GPDashboardApproval {
 			@FormDataParam("file") FormDataBodyPart body, @FormDataParam("cino") String cino,
 			@FormDataParam("dailyStatus") String dailyStatus, @FormDataParam("deptCode") String deptCode,
 			@FormDataParam("distCode") String distCode, @FormDataParam("roleId") String roleId,
-			@FormDataParam("userId") String userId, @FormDataParam("oldNewType") String oldNewType) throws Exception {
+			@FormDataParam("userId") String userId, @FormDataParam("serialNo") String serialNo) throws Exception {
 
 		Connection con = null;
 		PreparedStatement ps = null;
@@ -362,27 +362,25 @@ public class GPDashboardApproval {
 				
 				con = DatabasePlugin.connect();
 				
-				String sql = "insert into ecourts_dept_instructions (cino, instructions , upload_fileno,dept_code ,dist_code,insert_by,legacy_ack_flag,status_instruction_flag ) "
-						+ " values (?,?, ?, ?, ?, ?,?,?)";
-
-				ps = con.prepareStatement(sql);
-				int i = 1;
-				ps.setString(i, cino);
-				ps.setString(++i, dailyStatus != null ? dailyStatus.toString() : "");
-				ps.setString(++i, fileUploadPath);
-				ps.setString(++i, CommonModels.checkStringObject(deptCode));
-				ps.setInt(++i, CommonModels.checkIntObject(distCode));
-				ps.setString(++i, userId);
-				ps.setString(++i, "Legacy");
-				ps.setString(++i, status_flag);
-			 
-
+				
+				
+				int serno = Integer.parseInt(serialNo);
+				
+				String sql = "update ecourts_dept_instructions set reply_flag='Y',reply_instructions='"+dailyStatus+"',"
+						+ " reply_upload_fileno='"+fileUploadPath+"',reply_insert_by='"+userId+"',reply_serno='"+serno+"',legacy_ack_flag='Legacy',"
+								+ " status_instruction_flag='D',reply_insert_time=now() where cino=? and slno=? ";  //and status_instruction_flag='I'
+				
+				PreparedStatement ps2 = null;
+				
+				ps2 = con.prepareStatement(sql);
+				ps2.setString(1, cino);
+				ps2.setInt(2, serno);
+				int b = ps2.executeUpdate();
 				System.out.println("sql--"+sql);
-		
-				int a = ps.executeUpdate();
-				if(a>0) {
+				
+				if(b>0) {
 					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks,uploaded_doc_path) "
-							+ " values ('" + cino + "','SUBMITTED DAILY CASE STATUS', '"+userId+"', 'MOBILE APP', '"+dailyStatus+"','"+fileUploadPath+"')";
+							+ " values ('" + cino + "','REPLY INSTRUCTIONS BY GP', '"+userId+"', 'MOBILE APP', '"+dailyStatus+"','"+fileUploadPath+"')";
 					DatabasePlugin.executeUpdate(sql, con);
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Instructions saved successfully\" }}";
 				}		
@@ -665,7 +663,8 @@ public class GPDashboardApproval {
 			@FormDataParam("file") FormDataBodyPart body, @FormDataParam("cino") String cino,
 			@FormDataParam("dailyStatus") String dailyStatus, @FormDataParam("deptCode") String deptCode,
 			@FormDataParam("distCode") String distCode, @FormDataParam("roleId") String roleId,
-			@FormDataParam("userId") String userId, @FormDataParam("oldNewType") String oldNewType) throws Exception {
+			@FormDataParam("userId") String userId, @FormDataParam("oldNewType") String oldNewType,
+			@FormDataParam("serialNo") String serialNo) throws Exception {
 
 		Connection con = null;
 		PreparedStatement ps = null;
@@ -691,27 +690,22 @@ public class GPDashboardApproval {
 				
 				con = DatabasePlugin.connect();
 				
-				String sql = "insert into ecourts_dept_instructions (cino, instructions , upload_fileno,dept_code ,dist_code,insert_by,legacy_ack_flag,status_instruction_flag ) "
-						+ " values (?,?, ?, ?, ?, ?,?,?)";
-
-				ps = con.prepareStatement(sql);
-				int i = 1;
-				ps.setString(i, cino);
-				ps.setString(++i, dailyStatus != null ? dailyStatus.toString() : "");
-				ps.setString(++i, fileUploadPath);
-				ps.setString(++i, CommonModels.checkStringObject(deptCode));
-				ps.setInt(++i, CommonModels.checkIntObject(distCode));
-				ps.setString(++i, userId);
-				ps.setString(++i, oldNewType);
-				ps.setString(++i, status_flag);
-			 
-
+				int serno = Integer.parseInt(serialNo);
+				
+				String sql = "update ecourts_dept_instructions set reply_flag='Y',reply_instructions='"+dailyStatus+"',"
+						+ " reply_upload_fileno='"+fileUploadPath+"',reply_insert_by='"+userId+"',reply_serno='"+serno+"',legacy_ack_flag='"+oldNewType+"',"
+								+ " status_instruction_flag='D',reply_insert_time=now() where cino=? and slno=? ";  //and status_instruction_flag='I'
+				
+				PreparedStatement ps2 = null;
+				
+				ps2 = con.prepareStatement(sql);
+				ps2.setString(1, cino);
+				ps2.setInt(2, serno);
+				int b = ps2.executeUpdate();
 				System.out.println("sql--"+sql);
-		
-				int a = ps.executeUpdate();
-				if(a>0) {
-					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks,uploaded_doc_path) "
-							+ " values ('" + cino + "','SUBMITTED DAILY CASE STATUS', '"+userId+"', 'MOBILE APP', '"+dailyStatus+"','"+fileUploadPath+"')";
+				if(b>0) {
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by, remarks,uploaded_doc_path) "
+							+ " values ('" + cino + "','REPLY INSTRUCTIONS BY GP', '"+userId+"', '"+dailyStatus+"','"+fileUploadPath+"')";
 					DatabasePlugin.executeUpdate(sql, con);
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Instructions saved successfully\" }}";
 				}		

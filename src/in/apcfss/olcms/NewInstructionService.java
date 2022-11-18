@@ -618,7 +618,7 @@ public class NewInstructionService {
 					
 					cino=jObject.get("ACKNO").toString();
 					con = DatabasePlugin.connect();
-					sql = "select instructions,to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time,coalesce(upload_fileno,'-') as upload_fileno from ecourts_dept_instructions where cino='" + cino + "'  order by 1 ";
+					sql = "select cino,instructions, to_char(insert_time,'dd-Mon-yyyy hh24:mi:ss PM') as insert_time,coalesce(insert_by,'0') as insert_by,legacy_ack_flag,coalesce(upload_fileno,'-') as upload_fileno,status_instruction_flag,reply_flag,slno,reply_serno, reply_instructions ,coalesce(reply_upload_fileno,'-') as reply_upload_fileno, reply_insert_time, reply_insert_by  from ecourts_dept_instructions where cino='" + cino + "'  order by insert_time::timestamp desc ";
 					
 					System.out.println("sql--" + sql);
 					List<Map<String, Object>> instructionsHistory = DatabasePlugin.executeQuery(sql, con);
@@ -629,16 +629,61 @@ public class NewInstructionService {
 						for (Map<String, Object> entry : instructionsHistory) {		
 						    
 						    	JSONObject history = new JSONObject();
-						    	history.put("INSTRUCTIONS", entry.get("instructions").toString());						    	
-						    	
-						    	history.put("SUBMITTED_TIME", entry.get("insert_time").toString());
-						    	
+						    	history.put("INSTRUCTIONS", entry.get("instructions"));	
+						    	history.put("SUBMITTED_BY", entry.get("insert_by"));	
+						    	history.put("SUBMITTED_TIME", entry.get("insert_time"));
 						    	
 						    	if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
 						    		history.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
 						    		
 						    	} else {
 						    		history.put("UPLOADED_FILE_PATH", "");
+						    		
+						    	}
+						    	
+						    	if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
+						    		history.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
+						    		
+						    	} else {
+						    		history.put("UPLOADED_FILE_PATH", "");
+						    		
+						    	}
+						    	
+						    	
+						    	if(entry.get("reply_instructions") !=null && !entry.get("reply_instructions").toString().equals("")) {
+						    		history.put("INSTRUCTION_REPLY", entry.get("reply_instructions").toString());
+						    		
+						    	} else {
+						    		history.put("INSTRUCTION_REPLY", "");
+						    		
+						    	}
+						    	
+						    	if(entry.get("reply_insert_time") !=null && !entry.get("reply_insert_time").toString().equals("")) {
+						    		history.put("INSTRUCTION_REPLY_TIME", entry.get("reply_insert_time").toString());
+						    		
+						    	} else {
+						    		history.put("INSTRUCTION_REPLY_TIME", "");
+						    		
+						    	}
+						    	
+						    	
+						    	
+						    	if(entry.get("reply_upload_fileno") !=null && !entry.get("reply_upload_fileno").toString().equals("-")) {
+						    		history.put("REPLY_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("reply_upload_fileno").toString());
+						    		
+						    	} else {
+						    		history.put("REPLY_FILE_PATH", "");
+						    		
+						    	}
+						    	
+						    	history.put("SL_NO", entry.get("slno"));						    		
+						    	
+						    	
+						    	if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("N")) {
+						    		history.put("DISPLAY_REPLY_BUTTON", "TRUE");
+						    		
+						    	} else if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("Y")){
+						    		history.put("DISPLAY_REPLY_BUTTON", "FALSE");
 						    		
 						    	}
 						    	
@@ -702,7 +747,9 @@ public class NewInstructionService {
 					
 					cino=jObject.get("CINO").toString();
 					con = DatabasePlugin.connect();
-					sql = "select instructions,to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time,coalesce(upload_fileno,'-') as upload_fileno from ecourts_dept_instructions where cino='" + cino + "'  order by 1 ";
+					//sql = "select instructions,to_char(insert_time,'dd-mm-yyyy HH:mi:ss') as insert_time,coalesce(upload_fileno,'-') as upload_fileno from ecourts_dept_instructions where cino='" + cino + "'  order by 1 ";
+					
+					sql = "select cino,instructions, to_char(insert_time,'dd-Mon-yyyy hh24:mi:ss PM') as insert_time,coalesce(insert_by,'0') as insert_by,legacy_ack_flag,coalesce(upload_fileno,'-') as upload_fileno,status_instruction_flag,reply_flag,slno,reply_serno, reply_instructions ,coalesce(reply_upload_fileno,'-') as reply_upload_fileno, reply_insert_time, reply_insert_by  from ecourts_dept_instructions where cino='" + cino + "'  order by insert_time::timestamp desc ";
 					
 					System.out.println("sql--" + sql);
 					List<Map<String, Object>> instructionsHistory = DatabasePlugin.executeQuery(sql, con);
@@ -713,16 +760,61 @@ public class NewInstructionService {
 						for (Map<String, Object> entry : instructionsHistory) {		
 						    
 						    	JSONObject history = new JSONObject();
-						    	history.put("INSTRUCTIONS", entry.get("instructions").toString());						    	
-						    	
-						    	history.put("SUBMITTED_TIME", entry.get("insert_time").toString());
-						    	
+						    	history.put("INSTRUCTIONS", entry.get("instructions"));	
+						    	history.put("SUBMITTED_BY", entry.get("insert_by"));	
+						    	history.put("SUBMITTED_TIME", entry.get("insert_time"));
 						    	
 						    	if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
 						    		history.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
 						    		
 						    	} else {
 						    		history.put("UPLOADED_FILE_PATH", "");
+						    		
+						    	}
+						    	
+						    	if(entry.get("upload_fileno") !=null && !entry.get("upload_fileno").toString().equals("-")) {
+						    		history.put("UPLOADED_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("upload_fileno").toString());
+						    		
+						    	} else {
+						    		history.put("UPLOADED_FILE_PATH", "");
+						    		
+						    	}
+						    	
+						    	
+						    	if(entry.get("reply_instructions") !=null && !entry.get("reply_instructions").toString().equals("")) {
+						    		history.put("INSTRUCTION_REPLY", entry.get("reply_instructions").toString());
+						    		
+						    	} else {
+						    		history.put("INSTRUCTION_REPLY", "");
+						    		
+						    	}
+						    	
+						    	if(entry.get("reply_insert_time") !=null && !entry.get("reply_insert_time").toString().equals("")) {
+						    		history.put("INSTRUCTION_REPLY_TIME", entry.get("reply_insert_time").toString());
+						    		
+						    	} else {
+						    		history.put("INSTRUCTION_REPLY_TIME", "");
+						    		
+						    	}
+						    	
+						    	
+						    	
+						    	if(entry.get("reply_upload_fileno") !=null && !entry.get("reply_upload_fileno").toString().equals("-")) {
+						    		history.put("REPLY_FILE_PATH", "https://apolcms.ap.gov.in/"+entry.get("reply_upload_fileno").toString());
+						    		
+						    	} else {
+						    		history.put("REPLY_FILE_PATH", "");
+						    		
+						    	}
+						    	
+						    	history.put("SL_NO", entry.get("slno"));						    		
+						    	
+						    	
+						    	if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("N")) {
+						    		history.put("DISPLAY_REPLY_BUTTON", "TRUE");
+						    		
+						    	} else if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("Y")){
+						    		history.put("DISPLAY_REPLY_BUTTON", "FALSE");
 						    		
 						    	}
 						    	
@@ -809,8 +901,8 @@ public class NewInstructionService {
 		
 				int a = ps.executeUpdate();
 				if(a>0) {
-					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , inserted_ip, remarks,uploaded_doc_path) "
-							+ " values ('" + cino + "','SUBMITTED INSTRUCTIONS TO GP', '"+userId+"', 'MOBILE APP', '"+instructions+"','"+fileUploadPath+"')";
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks,uploaded_doc_path) "
+							+ " values ('" + cino + "','SUBMITTED INSTRUCTIONS TO GP', '"+userId+"', '"+instructions+"','"+fileUploadPath+"')";
 					DatabasePlugin.executeUpdate(sql, con);
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Instructions saved successfully\" }}";
 				}		
