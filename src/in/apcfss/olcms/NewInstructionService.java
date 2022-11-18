@@ -680,10 +680,10 @@ public class NewInstructionService {
 						    	
 						    	
 						    	if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("N")) {
-						    		history.put("DISPLAY_REPLY_BUTTON", "TRUE");
+						    		history.put("DISPLAY_REPLY_BUTTON", "FALSE");
 						    		
 						    	} else if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("Y")){
-						    		history.put("DISPLAY_REPLY_BUTTON", "FALSE");
+						    		history.put("DISPLAY_REPLY_BUTTON", "TRUE");
 						    		
 						    	}
 						    	
@@ -811,10 +811,10 @@ public class NewInstructionService {
 						    	
 						    	
 						    	if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("N")) {
-						    		history.put("DISPLAY_REPLY_BUTTON", "TRUE");
+						    		history.put("DISPLAY_REPLY_BUTTON", "FALSE");
 						    		
 						    	} else if(entry.get("reply_flag") !=null && !entry.get("reply_flag").toString().equals("Y")){
-						    		history.put("DISPLAY_REPLY_BUTTON", "FALSE");
+						    		history.put("DISPLAY_REPLY_BUTTON", "TRUE");
 						    		
 						    	}
 						    	
