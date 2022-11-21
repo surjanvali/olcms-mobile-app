@@ -253,7 +253,8 @@ public class AcksAbstractReport {
 
 						String condition = "";
 						if ((roleId.equals("6"))) {
-							condition = " left join ecourts_mst_gp_dept_map egm on (egm.dept_code=d.dept_code) ";
+							condition = " left join ecourts_mst_gp_dept_map egm on (egm.dept_code=ad.dept_code) ";
+							sqlCondition += " and egm.gp_id='" +user_id + "' ";
 						}
 
 						if (roleId.equals("2")) {
