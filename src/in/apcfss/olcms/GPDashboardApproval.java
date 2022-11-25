@@ -2334,8 +2334,7 @@ public class GPDashboardApproval {
 	
 	
 	
-	// This is the modified instruction flow....
-	
+	//This methods retrieves both the Legacy and New Instructions cases list...	
 	
 	@POST
 	@Produces({ "application/json" })
@@ -2450,6 +2449,160 @@ public class GPDashboardApproval {
 					
 					if (casesData.length()>0)						
 						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Instruction case details retrived successfully\"  , "
+								+ finalString.substring(1, finalString.length() - 1) + "}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+								+ finalString.substring(1, finalString.length() - 1) + " }}";
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
+	
+	//This methods retrieves both the Legacy and New Para-wise remarks list...
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/legacyAndNewCasesPWRCounterForApproval")
+	public static Response legacyAndNewCasesPWRCounterForApproval(String incomingData) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} 
+				else {
+
+					String sql = null, sqlCondition = "", roleId = "", distId = "", deptCode = "", userId = "", condition = "", caseType = "", caseRegYear = "", caseNo = "" ;
+					String counter_pw_flag = "";
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					userId = jObject.get("USER_ID").toString();
+					
+					con = DatabasePlugin.connect();
+					
+					if(roleId!=null && roleId.equals("6")) { // GPO
+						
+						if(jObject.has("PW_COUNTER_FLAG") && !jObject.get("PW_COUNTER_FLAG").toString().equals("")) {
+							counter_pw_flag = CommonModels.checkStringObject(jObject.get("PW_COUNTER_FLAG").toString());
+						}
+						
+						condition=" and a.case_status=6 and e.gp_id='"+userId+"' ";		
+						
+						if(counter_pw_flag.equals("PR")) {
+							condition+=" and (pwr_uploaded='No' or pwr_uploaded='Yes') and (coalesce(pwr_approved_gp,'0')='0' or coalesce(pwr_approved_gp,'No')='No' )";
+						}
+						if(counter_pw_flag.equals("COUNTER")) {
+							condition+=" and pwr_uploaded='Yes' and coalesce(pwr_approved_gp,'No')='Yes' and (counter_filed='No' or counter_filed='Yes') and coalesce(counter_approved_gp,'F')='F'";
+						}
+						
+					}
+					
+					
+					sql = "select type_name_reg,'Legacy' as legacy_ack_flag, reg_no, reg_year, to_char(dt_regis,'dd-mm-yyyy') as dt_regis, a.cino, "
+							+ "case when length(scanned_document_path) > 10 then scanned_document_path else '-' end as scanned_document_path from ecourts_case_data a "
+							+ " left join ecourts_olcms_case_details od on (a.cino=od.cino)"
+							+ " left join ecourts_mst_gp_dept_map e on (a.dept_code=e.dept_code and a.assigned_to=e.gp_id) "
+							+ " inner join dept_new d on (a.dept_code=d.dept_code) "
+							+ " where assigned=true "+condition
+							+ " and coalesce(a.ecourts_case_status,'')!='Closed' ";
+					
+					sql	+= "order by reg_year,type_name_reg,reg_no";
+					 
+					 
+					System.out.println("SQL:" + sql);						
+					
+					JSONObject casesData = new JSONObject();
+
+					con = DatabasePlugin.connect();
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+					
+					JSONArray casesList = new JSONArray();
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("CASE_TYPE", entry.get("type_name_reg").toString());
+					    	String caseno = entry.get("type_name_reg").toString()+" "+entry.get("reg_no").toString()+"/"+entry.get("reg_year").toString();
+					    	cases.put("CASE_NO", caseno);						    	
+					    	cases.put("CASE_REG_DATE", entry.get("dt_regis"));
+					    	cases.put("STATUS", "Pending");
+					    	cases.put("CINO", entry.get("cino"));
+					    	cases.put("LEGACY_ACK_FLAG", entry.get("legacy_ack_flag"));
+							
+							
+							casesList.put(cases);
+						}
+					}
+					
+					String sql1 = "select (select case_full_name from case_type_master ctm where ctm.sno::text=b.casetype::text) as type_name_reg,'New' as legacy_ack_flag, reg_no, reg_year, inserted_time::date as dt_regis, a.ack_no as cino, "
+							+ "case when length(ack_file_path) > 10 then ack_file_path else '-' end as scanned_document_path "
+							+ " from ecourts_gpo_ack_depts a inner join ecourts_gpo_ack_dtls b on (a.ack_no=b.ack_no)"
+							+ " left join ecourts_olcms_case_details od on (a.ack_no=od.cino)"
+							+ " left join ecourts_mst_gp_dept_map e on (a.dept_code=e.dept_code and a.assigned_to=e.gp_id) "
+							+ " inner join dept_new d on (a.dept_code=d.dept_code) "
+							+ " where assigned=true "+condition
+							+ " and coalesce(a.ecourts_case_status,'')!='Closed' ";
+					
+					sql1	+= "order by reg_year,type_name_reg,reg_no";
+					
+					data = DatabasePlugin.executeQuery(sql1, con);
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("CASE_TYPE", entry.get("type_name_reg").toString());
+					    	String caseno = entry.get("type_name_reg").toString()+" "+entry.get("reg_no").toString()+"/"+entry.get("reg_year").toString();
+					    	cases.put("CASE_NO", caseno);						    	
+					    	cases.put("CASE_REG_DATE", entry.get("dt_regis"));
+					    	cases.put("STATUS", "Pending");
+					    	cases.put("CINO", entry.get("cino"));
+					    	cases.put("LEGACY_ACK_FLAG", entry.get("legacy_ack_flag"));
+							
+							casesList.put(cases);
+						}
+					}
+					
+					
+					casesData.put("CASES_LIST", casesList);
+					
+					String finalString = casesData.toString();
+					
+					if (casesData.length()>0)						
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Para wise remarks/Counters Filed cases list retrived successfully\"  , "
 								+ finalString.substring(1, finalString.length() - 1) + "}}";
 					else
 						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
