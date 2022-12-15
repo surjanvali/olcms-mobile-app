@@ -2,6 +2,8 @@ package in.apcfss.olcms;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -33,11 +35,148 @@ import plugins.DatabasePlugin;
 
 @Path("/caseCategoryUpdationService")
 public class CaseCategoryUpdationService {
+	
+	
 	@POST
 	@Produces({ "application/json" })
 	@Consumes({ "application/json" })
-	@Path("/secDeptWise")
-	public static Response secDeptWise(String incomingData) throws Exception {
+	@Path("/displayCaseFilters")
+	public static Response displayCaseFilters(String incomingData) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} else {
+
+					String sql = null, sqlCondition = "", roleId = "", distId = "", deptCode = "", userId = "";
+
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					userId = jObject.get("USER_ID").toString();
+					con = DatabasePlugin.connect();
+					
+					//START - Populate the District list in the District dropdown
+					
+					if (roleId.equals("2")) {
+						sql = "select district_id,upper(district_name) as dist_name from district_mst where district_id='" + distId + "' order by district_name";
+					}
+						
+					else {
+						sql = "select district_id,upper(district_name) as dist_name from district_mst order by district_name";
+					}
+					
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+
+					JSONArray distList = new JSONArray();
+					JSONObject casesData = new JSONObject();
+
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("DIST_CODE", entry.get("district_id").toString());								
+							cases.put("DIST_NAME", entry.get("dist_name").toString());
+							
+							distList.put(cases);
+						}
+					} 
+					casesData.put("DIST_LIST", distList);					
+					
+					//END - Populate the District list in the District dropdown
+					
+					
+					//START - Code to populate the Purpose name Select box
+					
+					sql = "select purpose_name,purpose_name from apolcms.ecourts_case_data where dept_code='"
+					+ deptCode + "' group by purpose_name order by 1";
+					
+					data = DatabasePlugin.executeQuery(sql, con);
+
+					JSONArray purposeList = new JSONArray();
+
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+
+						for (Map<String, Object> entry : data) {
+							JSONObject cases = new JSONObject();
+							cases.put("PURPOSE_NAME", entry.get("purpose_name").toString());	
+							
+							purposeList.put(cases);
+						}
+					} 
+					casesData.put("PURPOSE_LIST", purposeList);	
+					
+					//END - Code to populate the Purpose name select box
+					
+					
+					/* START - Code to populate the registered years select box */
+					List selectData = new ArrayList();
+					
+					
+					for (int i = 2022; i > 1980; i--) {
+						LinkedHashMap<String,Integer> hm=new LinkedHashMap<String,Integer>();
+						hm.put("YEAR", i);
+						selectData.add(hm);
+					}
+
+					
+					casesData.put("YEARS_LIST", new JSONArray(selectData));
+					/* END - Code to populate the registered years select box */
+					
+					
+					
+					String finalString = casesData.toString();
+					
+					if (casesData.length()>0)						
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases Filters retrived successfully\"  , "
+								+ finalString.substring(1, finalString.length() - 1) + "}}";
+					else
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+								+ finalString.substring(1, finalString.length() - 1) + " }}";
+					
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
+	
+	
+	
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/getFinanceCategoryList")
+	public static Response getFinanceCategoryList(String incomingData) throws Exception {
 		Connection con = null;
 		String jsonStr = "",sql="",sqlCondition = "";
 		try {
@@ -123,7 +262,9 @@ public class CaseCategoryUpdationService {
 					sql= " select a.*, b.finance_category from ecourts_case_data a left join ecourts_case_category_wise_data b on (a.cino=b.cino) "
 							+ " where coalesce(assigned,'f')='f'  "+sqlCondition+" and coalesce(ecourts_case_status,'')!='Closed' order by finance_category";
 
+					
 					System.out.println("ecourts SQL:" + sql);
+					con = DatabasePlugin.connect();
 					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
 					
 					// System.out.println("data=" + data);
@@ -136,18 +277,18 @@ public class CaseCategoryUpdationService {
 						
 						for (Map<String, Object> entry : data) {								   
 							JSONObject cases = new JSONObject();
-					    	cases.put("CINO", entry.get("cino").toString());						    	
-					    	cases.put("DATE_OF_FILING", entry.get("date_of_filing").toString());
+					    	cases.put("CINO", entry.get("cino"));						    	
+					    	cases.put("DATE_OF_FILING", entry.get("date_of_filing"));
 					    	cases.put("CASE_TYPE", entry.get("type_name_fil"));
 					    	cases.put("REG_NO", entry.get("reg_no"));
 					    	cases.put("REG_YEAR", entry.get("reg_year"));
-					    	cases.put("PET_NAME", entry.get("pet_name").toString());
-					    	cases.put("DIST_NAME", entry.get("dist_name").toString());
-					    	cases.put("PURPOSE_NAME", entry.get("purpose_name").toString());
-					    	cases.put("RES_NAME", entry.get("res_name").toString());
-					    	cases.put("PET_ADV", entry.get("pet_adv").toString());
-					    	cases.put("RES-ADV", entry.get("res_adv").toString());
-					    	cases.put("FIN_CATEGORY", entry.get("finance_category").toString());
+					    	cases.put("PET_NAME", entry.get("pet_name"));
+					    	cases.put("DIST_NAME", entry.get("dist_name"));
+					    	cases.put("PURPOSE_NAME", entry.get("purpose_name"));
+					    	cases.put("RES_NAME", entry.get("res_name"));
+					    	cases.put("PET_ADV", entry.get("pet_adv"));
+					    	cases.put("RES_ADV", entry.get("res_adv"));
+					    	cases.put("FIN_CATEGORY", entry.get("finance_category"));
 					    	
 					    	finalList.put(cases);
 						}
@@ -517,6 +658,7 @@ public class CaseCategoryUpdationService {
 		}
 		return Response.status(200).entity(jsonStr).build();
 	}
+	
 	
 	
 }

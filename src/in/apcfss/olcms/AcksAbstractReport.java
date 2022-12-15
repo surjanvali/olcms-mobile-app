@@ -242,7 +242,11 @@ public class AcksAbstractReport {
 							+ "','dd-mm-yyyy') ";
 						}
 						
-						
+						if (jObject.has("SELECTED_USER_ID") && jObject.get("SELECTED_USER_ID") != null
+								&& !jObject.get("SELECTED_USER_ID").toString().equals("")
+								&& !jObject.get("SELECTED_USER_ID").toString().equals("0")) {
+							sqlCondition += " and a.inserted_by='" + jObject.get("SELECTED_USER_ID").toString() + "' ";
+						}
 						
 						if (!(roleId.equals("1") || roleId.equals("7") || roleId.equals("2") || roleId.equals("14")
 								|| roleId.equals("6"))) {
@@ -985,6 +989,11 @@ public class AcksAbstractReport {
 		}
 		return Response.status(200).entity(jsonStr).build();
 	}
+	
+	
+	
+	
+	
 	
 	
 }
