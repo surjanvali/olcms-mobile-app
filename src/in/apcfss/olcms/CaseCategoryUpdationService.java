@@ -1,5 +1,6 @@
 package in.apcfss.olcms;
 
+import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
@@ -327,6 +328,169 @@ public class CaseCategoryUpdationService {
 		}
 		return Response.status(200).entity(jsonStr).build();
 	}
+	
+	
+	
+	
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/updateBillDetailsAndSubmit")
+	public static Response updateBillDetailsAndSubmit(String incomingData) throws Exception {
+		Connection con = null;
+		String jsonStr = "",sql="",sqlCondition = "";
+		PreparedStatement ps = null;
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+				if (jObject1.has("REQUEST") && jObject1.get("REQUEST") != null && !jObject1.get("REQUEST").toString().trim().equals("")) {
+
+					JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+					System.out.println("jObject:" + jObject);
+					
+					if(!jObject.has("CINO") || jObject.get("CINO").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- CINO is missing in the request.\" }}";
+					}
+					else if(!jObject.has("FIN_CATEGORY") || jObject.get("FIN_CATEGORY").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- FIN_CATEGORY is missing in the request.\" }}";
+					}
+					else if(!jObject.has("NAME_WORK") || jObject.get("NAME_WORK").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- NAME_WORK is missing in the request.\" }}";
+					}
+					else if(!jObject.has("EST_COST") || jObject.get("EST_COST").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- EST_COST is missing in the request.\" }}";
+					}
+					else if(!jObject.has("ADMIN_SANCTION") || jObject.get("ADMIN_SANCTION").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ADMIN_SANCTION is missing in the request.\" }}";
+					}
+					else if(!jObject.has("GRANT_NAME") || jObject.get("GRANT_NAME").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- GRANT_NAME is missing in the request.\" }}";
+					}
+					else if(!jObject.has("EFILE_NO") || jObject.get("EFILE_NO").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- EFILE_NO is missing in the request.\" }}";
+					}
+					else if(!jObject.has("REMARKS") || jObject.get("REMARKS").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- REMARKS is missing in the request.\" }}";
+					}
+					else {
+
+					String roleId=jObject.get("ROLE_ID").toString();
+					String dept_code=jObject.get("DEPT_CODE").toString();
+					int dist_id = Integer.parseInt(jObject.get("DIST_ID").toString());
+					String user_id = jObject.get("USER_ID").toString();	
+					String cIno = jObject.get("CINO").toString();
+					
+					
+					con = DatabasePlugin.connect();
+					int i = 1;
+					String  ip = InetAddress.getLocalHost().toString();
+					
+					if (cIno != null && !cIno.isEmpty() ) {
+						sql="select count(*) from ecourts_case_category_wise_data where cino='"+cIno+"' ";
+						int caseData = Integer.parseInt(DatabasePlugin.getSingleValue(con, sql));
+						
+						
+						if(caseData > 0) {
+							sql=" update apolcms.ecourts_case_category_wise_data set finance_category=?, work_name=?, est_cost=?, admin_sanction=?, grant_val=?, "
+									+ " efile_com_no=?, bill_remarks=?, submit_date=now(), ip_addrs=? "
+									+ "     where cino=?" ;
+							ps = con.prepareStatement(sql);
+							i = 1;
+							ps.setString(i, jObject.get("FIN_CATEGORY") != null ? jObject.get("FIN_CATEGORY").toString() : "");
+							ps.setString(++i, jObject.get("NAME_WORK") != null ? jObject.get("NAME_WORK").toString() : "");
+							ps.setString(++i, jObject.get("EST_COST") != null ? jObject.get("EST_COST").toString() : "");
+							ps.setString(++i, jObject.get("ADMIN_SANCTION") != null ? jObject.get("ADMIN_SANCTION").toString() : "");
+							ps.setString(++i, jObject.get("GRANT_NAME") != null ? jObject.get("GRANT_NAME").toString() : "");
+							ps.setString(++i, jObject.get("EFILE_NO") != null ? jObject.get("EFILE_NO").toString() : "");
+							ps.setString(++i, jObject.get("REMARKS") != null ? jObject.get("REMARKS").toString() : "");
+							ps.setString(++i, ip!= null ? ip : "");
+							ps.setString(++i, cIno != null ? cIno : "");
+						}
+						else {
+							sql=" INSERT INTO apolcms.ecourts_case_category_wise_data( cino, finance_category, work_name, est_cost, admin_sanction, grant_val, "
+									+ " efile_com_no, bill_remarks, submit_date, ip_addrs) "
+									+ "     VALUES( ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, now(), ?)" ;
+							ps = con.prepareStatement(sql);
+							i = 1;
+							ps.setString(i, cIno != null ? cIno : "");
+							ps.setString(i, jObject.get("FIN_CATEGORY") != null ? jObject.get("FIN_CATEGORY").toString() : "");
+							ps.setString(++i, jObject.get("NAME_WORK") != null ? jObject.get("NAME_WORK").toString() : "");
+							ps.setString(++i, jObject.get("EST_COST") != null ? jObject.get("EST_COST").toString() : "");
+							ps.setString(++i, jObject.get("ADMIN_SANCTION") != null ? jObject.get("ADMIN_SANCTION").toString() : "");
+							ps.setString(++i, jObject.get("GRANT_NAME") != null ? jObject.get("GRANT_NAME").toString() : "");
+							ps.setString(++i, jObject.get("EFILE_NO") != null ? jObject.get("EFILE_NO").toString() : "");
+							ps.setString(++i, jObject.get("REMARKS") != null ? jObject.get("REMARKS").toString() : "");
+							ps.setString(++i, ip!= null ? ip : "");
+						}
+						int a = ps.executeUpdate();
+						ps.close();
+
+						
+						sql = "delete from cfms_bill_data_mst where cino='" + cIno + "'";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						JSONArray ja_data = jObject.getJSONArray("BILL_DETAILS");
+
+						//extracting data array from json string
+						
+						int length = ja_data.length(); 
+
+						
+						
+						//loop to get all json objects from data json array
+						sql = " INSERT INTO apolcms.cfms_bill_data_mst( cino, cfms_bill_id,cfms_bill_status,cfms_bill_amount) "
+								+ "     VALUES( ?, ?, ?, ?)";
+						ps = con.prepareStatement(sql);
+						
+						for (int j = 0; j < length; j++) {
+							JSONObject jObj = ja_data.getJSONObject(j);
+							i = 1;
+							ps.setString(i, cIno != null ? cIno : "");							
+							ps.setString(++i, jObj.getString("BILL_ID").toString());
+							ps.setString(++i, jObj.getString("BILL_STATUS").toString());
+							ps.setString(++i, jObj.getString("BILL_AMOUNT").toString());
+							ps.addBatch();
+							System.out.println("sql--" + sql);
+							
+
+						}
+						ps.executeBatch();
+						
+						JSONObject casesData = new JSONObject();
+						String finalString = casesData.toString();
+						
+						
+						if (a>0)					    
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"CFMS Bill details updated successfully. \"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+						else
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error in submission. Kindly try again.\", "+finalString.substring(1,finalString.length()-1)+" }}";
+						
+					}
+				  } 
+				} else {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\", \"RSPDESC\" :\"Invalid Data Format.\"}}";
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+			if (ps != null)
+				ps.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
 	
 	
 	
