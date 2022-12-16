@@ -378,16 +378,12 @@ public class CaseCategoryUpdationService {
 					}
 					else {
 
-					String roleId=jObject.get("ROLE_ID").toString();
-					String dept_code=jObject.get("DEPT_CODE").toString();
-					int dist_id = Integer.parseInt(jObject.get("DIST_ID").toString());
-					String user_id = jObject.get("USER_ID").toString();	
+					
 					String cIno = jObject.get("CINO").toString();
 					
 					
 					con = DatabasePlugin.connect();
 					int i = 1;
-					String  ip = InetAddress.getLocalHost().toString();
 					
 					if (cIno != null && !cIno.isEmpty() ) {
 						sql="select count(*) from ecourts_case_category_wise_data where cino='"+cIno+"' ";
@@ -396,7 +392,7 @@ public class CaseCategoryUpdationService {
 						
 						if(caseData > 0) {
 							sql=" update apolcms.ecourts_case_category_wise_data set finance_category=?, work_name=?, est_cost=?, admin_sanction=?, grant_val=?, "
-									+ " efile_com_no=?, bill_remarks=?, submit_date=now(), ip_addrs=? "
+									+ " efile_com_no=?, bill_remarks=?, submit_date=now() "
 									+ "     where cino=?" ;
 							ps = con.prepareStatement(sql);
 							i = 1;
@@ -407,24 +403,22 @@ public class CaseCategoryUpdationService {
 							ps.setString(++i, jObject.get("GRANT_NAME") != null ? jObject.get("GRANT_NAME").toString() : "");
 							ps.setString(++i, jObject.get("EFILE_NO") != null ? jObject.get("EFILE_NO").toString() : "");
 							ps.setString(++i, jObject.get("REMARKS") != null ? jObject.get("REMARKS").toString() : "");
-							ps.setString(++i, ip!= null ? ip : "");
 							ps.setString(++i, cIno != null ? cIno : "");
 						}
 						else {
 							sql=" INSERT INTO apolcms.ecourts_case_category_wise_data( cino, finance_category, work_name, est_cost, admin_sanction, grant_val, "
-									+ " efile_com_no, bill_remarks, submit_date, ip_addrs) "
-									+ "     VALUES( ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, now(), ?)" ;
+									+ " efile_com_no, bill_remarks, submit_date) "
+									+ "     VALUES( ?, ?, ?, ?, ?, ?, ?, ?, now())" ;
 							ps = con.prepareStatement(sql);
 							i = 1;
 							ps.setString(i, cIno != null ? cIno : "");
-							ps.setString(i, jObject.get("FIN_CATEGORY") != null ? jObject.get("FIN_CATEGORY").toString() : "");
+							ps.setString(++i, jObject.get("FIN_CATEGORY") != null ? jObject.get("FIN_CATEGORY").toString() : "");
 							ps.setString(++i, jObject.get("NAME_WORK") != null ? jObject.get("NAME_WORK").toString() : "");
 							ps.setString(++i, jObject.get("EST_COST") != null ? jObject.get("EST_COST").toString() : "");
 							ps.setString(++i, jObject.get("ADMIN_SANCTION") != null ? jObject.get("ADMIN_SANCTION").toString() : "");
 							ps.setString(++i, jObject.get("GRANT_NAME") != null ? jObject.get("GRANT_NAME").toString() : "");
 							ps.setString(++i, jObject.get("EFILE_NO") != null ? jObject.get("EFILE_NO").toString() : "");
 							ps.setString(++i, jObject.get("REMARKS") != null ? jObject.get("REMARKS").toString() : "");
-							ps.setString(++i, ip!= null ? ip : "");
 						}
 						int a = ps.executeUpdate();
 						ps.close();
