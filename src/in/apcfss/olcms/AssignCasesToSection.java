@@ -280,6 +280,206 @@ public class AssignCasesToSection {
 
 	}
 	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/updateStatus")
+	public static Response updateStatus(String incomingData) throws Exception {
+
+		Connection con = null;
+		String jsonStr = "";
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				} else if (!jObject.has("CINO") || jObject.get("CINO").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- CINO is missing in the request.\" }}";
+				} 
+				else {
+					String sql = null, sqlCondition = "", condition="",roleId="", distId="", deptCode="", userId="";
+					userId = jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					String cIno = jObject.get("CINO").toString();
+					
+					con = DatabasePlugin.connect();
+					
+					JSONArray buttonsList = new JSONArray();
+					JSONObject jsonObject = new JSONObject();
+					JSONObject casesData = new JSONObject();
+					
+					sql = "select a.*, prayer from ecourts_case_data a left join nic_prayer_data np on (a.cino=np.cino) where a.cino='" + cIno + "'";
+					
+					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+					
+					if (data != null && !data.isEmpty() && data.size() > 0) {
+						
+						Map caseData1 = (Map)data.get(0);
+						
+						if(roleId!=null && (roleId.equals("4") || roleId.equals("5") || roleId.equals("10"))) {
+							jsonObject.put("SHOWBACKBTN", "TRUE");
+						}
+						else {
+							jsonObject.put("SHOWBACKBTN", "FALSE");
+						}
+						
+						if(roleId!=null && roleId.equals("8") || roleId.equals("11") || roleId.equals("12")) {
+							if(CommonModels.checkStringObject(caseData1.get("section_officer_updated")).equals("T")) {
+								System.out.println("dept code-3,5:"+deptCode.substring(3, 5));
+								
+								if(deptCode.substring(3, 5)=="01" || deptCode.substring(3, 5).equals("01")) {
+									
+									jsonObject.put("SHOWMLOBTN", "TRUE");
+								}
+								else {
+									jsonObject.put("SHOWNOBTN", "TRUE");
+								}
+							}
+						}
+						else if(roleId!=null && roleId.equals("4") && CommonModels.checkStringObject(caseData1.get("mlo_no_updated")).equals("T")) { 
+							// MLO TO SECT DEPT
+							jsonObject.put("SHOWSECDEPTBTN", "TRUE");
+						}
+						else if(roleId!=null && (roleId.equals("5") || roleId.equals("10")) && CommonModels.checkStringObject(caseData1.get("mlo_no_updated")).equals("T")) { 
+							// NO TO HOD/DEPT
+							jsonObject.put("SHOWHODDEPTBTN", "TRUE");
+						}
+						else if((roleId.equals("3") || roleId.equals("9")) && CommonModels.checkStringObject(caseData1.get("mlo_no_updated")).equals("T")) {
+		
+							sql = "select emailid, full_name||' ('|| replace(emailid,'@ap.gov.in','') ||')' as display_name from ecourts_mst_gps a inner join ecourts_mst_gp_dept_map b on (a.emailid=b.gp_id) where b.dept_code='"+deptCode+"' order by emailid";
+							
+							data = DatabasePlugin.executeQuery(sql, con);
+							
+							JSONArray gpArray = new JSONArray();
+							if (data != null && !data.isEmpty() && data.size() > 0) {
+								for (Map<String, Object> entry : data) {
+									JSONObject obj = new JSONObject();
+									obj.put("EMAIL_ID",entry.get("emailid") !=null ? entry.get("emailid").toString() :"");
+									obj.put("DISPLAY_NAME",entry.get("display_name") !=null ? entry.get("display_name").toString() :"");
+									
+									gpArray.put(obj);
+								}
+							}
+							
+							casesData.put("GP_LIST", gpArray);							
+							jsonObject.put("SHOWGPBTN", "TRUE");
+						}
+						else if(roleId.equals("6") ) { // GP LOGIN
+							jsonObject.put("SHOWGPAPPROVEBTN", "TRUE");
+						}
+						
+						buttonsList.put(jsonObject);
+						casesData.put("BUTTONS_LIST", buttonsList);
+					}
+					
+					sql=" select case_status,ecourts_case_status from ecourts_case_data where cino='" + cIno + "' ";
+					List<Map<String, Object>> data_status = DatabasePlugin.executeQuery(sql, con);
+					
+					
+					String caseStatus=(String)data_status.get(0).get("ecourts_case_status").toString();
+					
+					if ((caseStatus.equals(null) || !caseStatus.equals("Private"))) {
+
+						sql = "SELECT cino, case when length(petition_document) > 0 then petition_document else null end as petition_document, "
+								+ " case when length(counter_filed_document) > 0 then counter_filed_document else null end as counter_filed_document,"
+								+ " case when length(judgement_order) > 0 then judgement_order else null end as judgement_order,"
+								+ " case when length(action_taken_order) > 0 then action_taken_order else null end as action_taken_order,"
+								+ " last_updated_by, last_updated_on, counter_filed, remarks, ecourts_case_status, corresponding_gp, "
+								+ " pwr_uploaded, to_char(pwr_submitted_date,'mm/dd/yyyy') as pwr_submitted_date, to_char(pwr_received_date,'mm/dd/yyyy') as pwr_received_date, "
+								+ " pwr_approved_gp, to_char(pwr_gp_approved_date,'mm/dd/yyyy') as pwr_gp_approved_date, appeal_filed, "
+								+ " appeal_filed_copy, to_char(appeal_filed_date,'mm/dd/yyyy') as appeal_filed_date, pwr_uploaded_copy "
+								+ " FROM apolcms.ecourts_olcms_case_details where cino='" + cIno + "'";
+
+						data = DatabasePlugin.executeQuery(sql, con);
+
+						JSONArray jsonArray = new JSONArray();
+
+						if (data != null && !data.isEmpty() && data.size() > 0) {
+							for (Map<String, Object> entry : data) {
+
+								JSONObject obj = new JSONObject();
+								obj.put("PETITION_DOC_PATH",CommonModels.checkStringObject(entry.get("petition_document")) != ""
+												? "https://apolcms.ap.gov.in/" + entry.get("petition_document")
+												: "");
+								obj.put("CASE_STATUS", entry.get("ecourts_case_status"));
+								obj.put("COUNTER_FILED_DOC", CommonModels.checkStringObject(entry.get("counter_filed_document")) != ""
+												? "https://apolcms.ap.gov.in/" + entry.get("counter_filed_document")
+												: "");
+								obj.put("JUDGEMENT_ORDER", CommonModels.checkStringObject(entry.get("judgement_order")) != ""
+												? "https://apolcms.ap.gov.in/" + entry.get("judgement_order")
+												: "");
+								obj.put("ACTION_TAKEN_ORDER", CommonModels.checkStringObject(entry.get("action_taken_order")) != ""
+												? "https://apolcms.ap.gov.in/" + entry.get("action_taken_order")
+												: "");
+								obj.put("COUNTER_FILED", entry.get("counter_filed"));
+								obj.put("REMARKS", entry.get("remarks"));
+								obj.put("PWR_SUBMITTED", entry.get("pwr_uploaded"));
+								obj.put("DATE_OF_PWR_SUBMISSION", entry.get("pwr_submitted_date"));
+								obj.put("PWR_UPLOADED_COPY", CommonModels.checkStringObject(entry.get("pwr_uploaded_copy")) != ""
+												? "https://apolcms.ap.gov.in/" + entry.get("pwr_uploaded_copy")
+												: "");
+								obj.put("PWR_APPROVED_BY_GP", entry.get("pwr_approved_gp"));
+								obj.put("PWR_GP_APPROVED_DATE", entry.get("pwr_gp_approved_date"));
+								obj.put("PWR_RECEIVED_DATE", entry.get("pwr_received_date"));
+								obj.put("APPEAL_FILED", entry.get("appeal_filed"));
+								obj.put("APPEAL_FILED_COPY", entry.get("appeal_filed_copy"));
+								obj.put("APPEAL_FILED_DATE", entry.get("appeal_filed_date"));
+
+								jsonArray.put(obj);
+
+							}
+
+							
+							casesData.put("CASES_LIST", jsonArray);
+							String finalString = casesData.toString();
+
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Cases retrived successfully\"  , "
+									+ finalString.substring(1, finalString.length() - 1) + "}}";
+
+						} else {
+							
+							casesData.put("CASES_LIST", jsonArray);
+							String finalString = casesData.toString();
+							
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Records Found.\", "
+									+ finalString.substring(1,finalString.length()-1)+" }}";
+						}
+
+					}
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	
 
 	@POST
 	@Produces({ "application/json" })
