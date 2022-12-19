@@ -1103,53 +1103,31 @@ public class DashboardAPI {
 					con = DatabasePlugin.connect();
 										
 					
-					sql = "select cino, action_type, inserted_by, to_char(inserted_on,'dd-mm-yyyy hh:MM:ss') as inserted_time , assigned_to, remarks, coalesce(uploaded_doc_path,'-') as uploaded_doc_path, dist_id , dn.dept_code||' - '||dn.description as deptdesc,"
-							+ " nd.fullname_en,nd.post_name_en , dm.district_name " + "from ecourts_case_activities ca "
+					sql = "select ca.cino, action_type, (type_name_reg||'/'||reg_no||'/'||reg_year) as case_no,inserted_by, to_char(inserted_on,'dd-mm-yyyy hh:MM:ss') as inserted_time , ca.assigned_to, remarks, coalesce(uploaded_doc_path,'-') as uploaded_doc_path, ca.dist_id , dn.dept_code||' - '||dn.description as deptdesc,"
+							+ " nd.fullname_en,nd.post_name_en , dm.district_name " + "from ecourts_case_activities ca inner join ecourts_case_data ecd on (ecd.cino=ca.cino) "
 							+ "left join (select distinct employee_id,fullname_en,post_name_en from nic_data) nd on (ca.assigned_to=employee_id) "
 							+ "left join dept_new dn on (ca.assigned_to=dn.dept_code) "
 							+ "left join district_mst dm on (ca.dist_id=dm.district_id) " + "where inserted_by='" + userid
-							+ "' and cino is not null and cino!='null' order by inserted_on desc limit 10";
+							+ "' and ca.cino is not null and ca.cino!='null' order by inserted_on desc limit 10";
 					
 					System.out.println("RECENT ACTIVITY SQL:" + sql);
 					
 					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);					
 					
 					JSONArray finalList = new JSONArray();
-					String assignedTo = "";
 					
 					if (data != null && !data.isEmpty() && data.size() > 0) {
 						
 						for (Map<String, Object> entry : data) {		
 						    
 							JSONObject cases = new JSONObject();
-					    	cases.put("CINO", entry.get("cino").toString());
-					    	
-					    	cases.put("ACTIVITY", entry.get("action_type").toString());
-					    	
-					    	if(entry.get("uploaded_doc_path")!=null && entry.get("uploaded_doc_path").toString().equals("-")) {
-					    		if (entry.get("deptdesc")!=null && !entry.get("deptdesc").toString().trim().equals("")) {
-					    			assignedTo = entry.get("deptdesc").toString();					    			
-					    		}
-					    		
-					    		if (entry.get("fullname_en")!=null && !entry.get("fullname_en").toString().trim().equals("")) {
-					    			assignedTo = assignedTo + " " +entry.get("fullname_en").toString();					    			
-					    		}
-					    		
-					    		if (entry.get("post_name_en")!=null && !entry.get("post_name_en").toString().trim().equals("")) {
-					    			assignedTo = assignedTo + " " +entry.get("post_name_en").toString();					    			
-					    		}
-					    		
-								try {
-									if (entry.get("dist_id") != null && !entry.get("dist_id").toString().trim().equals("")
-											&& Integer.parseInt(entry.get("dist_id").toString()) > 0) {
-										assignedTo = assignedTo + " " + entry.get("district_name").toString();
-									}
-								} catch (NumberFormatException e) {
-									assignedTo = assignedTo;
-								}
-					    	}
-					    	cases.put("ASSIGNED_TO", assignedTo);
-					    	cases.put("TIME", entry.get("inserted_time").toString());
+					    	cases.put("CINO", entry.get("cino"));
+					    	cases.put("ACTIVITY", entry.get("action_type"));
+					    	cases.put("CASE_NO", entry.get("case_no"));
+					    	cases.put("REMARKS", entry.get("remarks"));
+					    	cases.put("UPLOADED_PATH", entry.get("uploaded_doc_path")!=null ? "https://apolcms.ap.gov.in/"+entry.get("uploaded_doc_path"):"" );
+					    	cases.put("ASSIGNED_TO", entry.get("assigned_to"));
+					    	cases.put("TIME", entry.get("inserted_time"));
 					    	
 					    	finalList.put(cases);
 						}
