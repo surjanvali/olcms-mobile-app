@@ -1125,7 +1125,7 @@ public class DashboardAPI {
 					    	cases.put("ACTIVITY", entry.get("action_type"));
 					    	cases.put("CASE_NO", entry.get("case_no"));
 					    	cases.put("REMARKS", entry.get("remarks"));
-					    	cases.put("UPLOADED_PATH", entry.get("uploaded_doc_path")!=null ? "https://apolcms.ap.gov.in/"+entry.get("uploaded_doc_path"):"" );
+					    	cases.put("UPLOADED_PATH", entry.get("uploaded_doc_path")!=null && !entry.get("uploaded_doc_path").toString().equals("-") ? "https://apolcms.ap.gov.in/"+entry.get("uploaded_doc_path"):"" );
 					    	cases.put("ASSIGNED_TO", entry.get("assigned_to"));
 					    	cases.put("TIME", entry.get("inserted_time"));
 					    	
