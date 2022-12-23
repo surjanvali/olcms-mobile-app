@@ -535,8 +535,6 @@ public class AssignCasesToSection {
 				
 				String newFileName="";
 				
-				
-				
 				String actionPerformed="";
 				actionPerformed = !CommonModels.checkStringObject(actionToPerform).equals("") && !CommonModels.checkStringObject(actionToPerform).equals("0") ?  actionToPerform   : "CASE DETAILS UPDATED";
 				
@@ -834,26 +832,100 @@ public class AssignCasesToSection {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/forwardCaseDetailsToGP")
+	public static Response forwardCaseDetailsToGP(String incomingData) throws Exception {
+
+		Connection con = null;
+		String jsonStr = "";
+
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				}  else if (!jObject.has("CINO") || jObject.get("CINO").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- CINO is missing in the request.\" }}";
+				} else if (!jObject.has("GP_CODE") || jObject.get("GP_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- GP_CODE is missing in the request.\" }}";
+				} 
+				else {
+					String sql = null, sqlCondition = "", condition="",roleId="", distId="", deptCode="", userId="",cino="";
+					String newStatus = "";
+					int a=0;
+					userId = jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					cino = jObject.get("CINO").toString();
+					String fwdOfficer = CommonModels.checkStringObject(jObject.get("GP_CODE").toString());
+					String remarks = "";
+					
+					con = DatabasePlugin.connect();
+					
+					con.setAutoCommit(false);
+					
+					if (jObject.has("REMARKS") && !jObject.get("REMARKS").toString().equals("")
+							&& !jObject.get("REMARKS").toString().equals("0")) {
+						remarks = CommonModels.checkStringObject(jObject.get("REMARKS").toString());
+					}
+					
+					if(roleId!=null && roleId.equals("3")) {//FROM SECT DEPT TO GP.
+						newStatus = "6";
+						sql="update ecourts_case_data set case_status="+newStatus+", assigned_to='"+fwdOfficer+"' where cino='"+cino+"'  and mlo_no_updated='T' and case_status='1'";//and section_officer_updated='T' 
+						
+					}
+					else if(roleId!=null && roleId.equals("9")) {//FROM HOD TO GP
+						newStatus = "6";						
+						sql="update ecourts_case_data set case_status="+newStatus+", assigned_to='"+fwdOfficer+"' where cino='"+cino+"' and mlo_no_updated='T' and case_status='3'"; //and section_officer_updated='T' 
+						
+					}
+					
+					System.out.println("SQL:"+sql);
+					a = DatabasePlugin.executeUpdate(sql, con);
+					
+					if (a > 0) {
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , assigned_to , remarks) "
+								+ " values ('" + cino + "','CASE FORWARDED TO GP', '"+userId+"', '"+fwdOfficer+"', '"+remarks+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						con.commit();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Case successfully forwarded to the selected GP.\" }}";
+					} else {
+						con.rollback();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error while forwarding the case to the selected GP.\" }}";
+					}			
+
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
 	
 	
 	
