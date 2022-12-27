@@ -258,8 +258,8 @@ public class AssignNewCasesToSection {
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
 				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
-				} else if (!jObject.has("ACK_NO") || jObject.get("CINO").toString().equals("")) {
-					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- CINO is missing in the request.\" }}";
+				} else if (!jObject.has("ACK_NO") || jObject.get("ACK_NO").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- ACK_NO is missing in the request.\" }}";
 				} else if (!jObject.has("RESPONDENT_NO") || jObject.get("RESPONDENT_NO").toString().equals("")) {
 					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- RESPONDENT_NO is missing in the request.\" }}";
 				} 
