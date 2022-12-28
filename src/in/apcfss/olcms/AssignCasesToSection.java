@@ -916,7 +916,7 @@ public class AssignCasesToSection {
 			}
 		} catch (Exception e) {
 			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
-			// conn.rollback();
+			con.rollback();
 			e.printStackTrace();
 
 		} finally {

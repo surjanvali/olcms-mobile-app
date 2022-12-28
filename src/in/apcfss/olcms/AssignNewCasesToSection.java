@@ -1,5 +1,9 @@
 package in.apcfss.olcms;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URLEncoder;
@@ -18,10 +22,15 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import com.sun.jersey.multipart.FormDataBodyPart;
+import com.sun.jersey.multipart.FormDataParam;
 
 import in.apcfss.struts.commons.CommonModels;
 import in.apcfss.util.ECourtsCryptoHelper;
@@ -314,8 +323,6 @@ public class AssignNewCasesToSection {
 							+ " and a.ack_no='"+cIno+"'  order by inserted_time desc";
 					
 					
-					
-					
 					List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
 					JSONArray caseDetailsArray = new JSONArray();
 					
@@ -338,10 +345,7 @@ public class AssignNewCasesToSection {
 
 						}
 
-						
 						casesData.put("CASE_DETAILS", caseDetailsArray);
-						
-						
 						
 						
 						Map caseData1 = (Map)data.get(0);
@@ -423,12 +427,8 @@ public class AssignNewCasesToSection {
 							
 							acitivitiesArray.put(obj);
 
-						}
-
-						
+						}						
 						casesData.put("ACTIVITIES_DATA", acitivitiesArray);
-
-
 					}
 					
 					
@@ -513,6 +513,443 @@ public class AssignNewCasesToSection {
 	}
 	
 	
+	@POST
+	@Consumes({MediaType.MULTIPART_FORM_DATA})
+	@Path("/updateCaseDetails")
+	public Response updateCaseDetails(@FormDataParam("petitionDocument") InputStream petitionDoc,
+			@FormDataParam("petitionDocument") FormDataBodyPart petitionDocBody, @FormDataParam("actionTakenOrder") InputStream actionTakenOrderDoc,
+			@FormDataParam("actionTakenOrder") FormDataBodyPart actionTakenOrderDocBody, @FormDataParam("judgementOrder") InputStream judgementOrderDoc,
+			@FormDataParam("judgementOrder") FormDataBodyPart judgementOrderDocBody, @FormDataParam("appealFiledDocument") InputStream appealFiledDoc,
+			@FormDataParam("appealFiledDocument") FormDataBodyPart appealFiledDocBody, @FormDataParam("ackno") String cino,
+			@FormDataParam("userId") String userId, @FormDataParam("roleId") String roleId,@FormDataParam("deptCode") String deptCode,
+			@FormDataParam("remarks") String remarks,@FormDataParam("appealFiledFlag") String appealFiledFlag,
+			@FormDataParam("ecourtsCaseStatus") String ecourtsCaseStatus, @FormDataParam("actionToPerform") String actionToPerform,
+			@FormDataParam("appealFiledDate") String appealFiledDate,
+			@FormDataParam("counterFiledFlag") String counterFiledFlag,
+			@FormDataParam("counterFiledDoc") InputStream counterFiledDoc,
+			@FormDataParam("counterFiledDoc") FormDataBodyPart counterFiledDocBody,
+			@FormDataParam("paraWiseRemarksFlag") String paraWiseRemarksFlag,
+			@FormDataParam("paraWiseRemarksDoc") InputStream paraWiseRemarksDoc,
+			@FormDataParam("paraWiseRemarksDoc") FormDataBodyPart paraWiseRemarksDocBody,
+			@FormDataParam("pwrSubmittedDate") String pwrSubmittedDate,
+			@FormDataParam("pwrReceivedDate") String pwrReceivedDate,
+			@FormDataParam("pwrApprovedGP") String pwrApprovedGP,
+			@FormDataParam("pwrGPApprovedDate") String pwrGPApprovedDate, 
+			@FormDataParam("respondentId") String respondentId) throws Exception {
+		
+		Connection con = null;
+		String jsonStr = "";
+		String sql = "";
+
+		try {
+			
+			if (cino == null || cino.equals("")) {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ackno is missing in the request.\" }}";
+			} 
+			else if (ecourtsCaseStatus == null || ecourtsCaseStatus.equals("")) {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ecourtsCaseStatus is missing in the request.\" }}";
+			}
+			else {	
+			if (cino != null && !cino.equals("")) {
+				
+				con = DatabasePlugin.connect();
+				con.setAutoCommit(false);
+				
+				String newFileName="";
+				
+				String actionPerformed="";
+				actionPerformed = !CommonModels.checkStringObject(actionToPerform).equals("") && !CommonModels.checkStringObject(actionToPerform).equals("0") ?  actionToPerform   : "CASE DETAILS UPDATED";
+				
+				
+				String sqlCondition2="";
+				String petitionFileUploadPath="", actionFileUploadPath="", judgementFileUploadPath="", appealFileUploadPath="", counter_filed_document="", pwr_uploaded_copy="";
+				
+				// This section uploads the petition document in the server
+				
+				if(ecourtsCaseStatus != null && ecourtsCaseStatus.equals("Closed")) {
+					
+					if(actionTakenOrderDoc!=null  && !actionTakenOrderDoc.equals("") && actionTakenOrderDocBody != null && !actionTakenOrderDocBody.getFormDataContentDisposition().getFileName().equals("")) {
+						
+						
+						newFileName="actionorder_"+CommonModels.randomTransactionNo()+"."+actionTakenOrderDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/actionorder/"+newFileName;
+						
+						actionFileUploadPath = "uploads/actionorder/"+newFileName;
+						
+						writeToFile(actionTakenOrderDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','Uploaded Action Taken Order','"+userId+"', '"+remarks+"', '"+actionFileUploadPath+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2 = ", action_taken_order='"+actionFileUploadPath+"'";
+					}
+					
+					if(judgementOrderDoc!=null  && !judgementOrderDoc.equals("") && judgementOrderDocBody != null && !judgementOrderDocBody.getFormDataContentDisposition().getFileName().equals("")) {
+						
+						
+						newFileName="judgementorder_"+CommonModels.randomTransactionNo()+"."+judgementOrderDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/judgementorder/"+newFileName;
+						
+						judgementFileUploadPath = "uploads/judgementorder/"+newFileName;
+						
+						writeToFile(judgementOrderDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','Uploaded Judgement Order','"+userId+"', '"+remarks+"', '"+judgementFileUploadPath+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2 = ", judgement_order='"+judgementFileUploadPath+"'";
+					}
+					
+					
+					if(appealFiledFlag != null && appealFiledFlag.equals("Yes") && appealFiledDoc !=null  && !appealFiledDoc.equals("") && appealFiledDocBody != null && !appealFiledDocBody.getFormDataContentDisposition().getFileName().equals("")) {
+						
+						
+						newFileName="appealcopy_"+CommonModels.randomTransactionNo()+"."+appealFiledDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/appealcopies/"+newFileName;
+						
+						appealFileUploadPath = "uploads/appealcopies/"+newFileName;
+						
+						writeToFile(appealFiledDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','Uploaded Appeal Copy','"+userId+"', '"+remarks+"', '"+appealFileUploadPath+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2 = ", appeal_filed_copy='"+appealFileUploadPath+"'";
+					}
+					
+					
+					if(Integer.parseInt(DatabasePlugin.getSingleValue(con, "select count(*) from ecourts_olcms_case_details where cino='"+cino+"'")) > 0) {
+						
+						sql="insert into ecourts_olcms_case_details_log (cino ,  petition_document   ,    counter_filed_document  ,    judgement_order  , action_taken_order  ,last_updated_by ,  last_updated_on ,  counter_filed , remarks  , "
+								+ "ecourts_case_status ,  corresponding_gp, pwr_uploaded , pwr_submitted_date, pwr_received_date , pwr_approved_gp ,  pwr_gp_approved_date , appeal_filed ,  appeal_filed_copy, appeal_filed_date, pwr_uploaded_copy, "
+								+ " counter_approved_gp ,action_to_perfom, counter_approved_date ,counter_approved_by , respondent_slno, cordered_impl_date , dismissed_copy , final_order_status  ,no_district_updated)"
+								+ " select cino ,  petition_document   ,    counter_filed_document  ,    judgement_order  , action_taken_order  ,last_updated_by ,  last_updated_on ,  counter_filed , remarks  ,"
+								+ "ecourts_case_status ,  corresponding_gp, pwr_uploaded , pwr_submitted_date, pwr_received_date , pwr_approved_gp ,  pwr_gp_approved_date , appeal_filed ,  appeal_filed_copy, appeal_filed_date, pwr_uploaded_copy, "
+								+ " counter_approved_gp ,action_to_perfom, counter_approved_date ,counter_approved_by , respondent_slno, cordered_impl_date , dismissed_copy , final_order_status  ,no_district_updated from ecourts_olcms_case_details where cino='"+cino+"'";
+						
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sql = "update ecourts_olcms_case_details set ecourts_case_status='"
+								+ ecourtsCaseStatus + "', appeal_filed='"
+								+ appealFiledFlag + "',appeal_filed_date=to_date('"
+								+ CommonModels.checkStringObject(appealFiledDate) + "','mm/dd/yyyy'), remarks='"
+								+ remarks + "', last_updated_by='" + userId
+								+ "', last_updated_on=now(), action_to_perfom='"+actionToPerform
+								+"' " + sqlCondition2 + " where cino='" + cino + "' and respondent_slno='"+respondentId+"'";
+					}
+					else {
+						
+						
+						sql = "insert into ecourts_olcms_case_details (cino, ecourts_case_status, petition_document,counter_filed_document,pwr_uploaded_copy, appeal_filed, appeal_filed_copy, judgement_order, action_taken_order"
+								+ ", last_updated_by, last_updated_on, remarks, appeal_filed_date, action_to_perfom,respondent_slno) "
+								+ " values ('" + cino + "', '" 
+								+ ecourtsCaseStatus + "', '"
+								+ petitionFileUploadPath + "','" 
+								+ counter_filed_document + "','" 
+								+ pwr_uploaded_copy + "','" 
+								+ appealFiledFlag + "', '"
+								+ appealFileUploadPath + "', '" 
+								+ judgementFileUploadPath + "', '" 
+								+ actionFileUploadPath + "', '" 
+								+ userId + "', now(),'" 
+								+ remarks + "',to_date('"
+								+ CommonModels.checkStringObject(appealFiledDate)+"','mm/dd/yyyy'),"
+										+ " '"+actionToPerform+"','"+respondentId+"')";
+					}
+					
+					
+					int a = DatabasePlugin.executeUpdate(sql, con);
+					
+					sql="update ecourts_gpo_ack_depts set ecourts_case_status='"+ecourtsCaseStatus+"',section_officer_updated='T' "
+							+ " where ack_no='"+cino+"' and dept_code='"+deptCode+"' and respondent_slno='"+respondentId+"'  ";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks ) "
+							+ "values ('" + cino + "','"+actionPerformed+"','"+userId+"', '"+remarks+"')";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+					if (a > 0) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Case details updated successfully\" }}";
+						con.commit();
+					} else {
+						con.rollback();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Error while updating the case details\" }}";
+					}
+					
+				
+				}
+				else if(ecourtsCaseStatus != null && ecourtsCaseStatus.equals("Pending")){
+					String counterFileUploadPath = "";
+					String pwrFileUploadPath = "";
+					
+					
+					if(counterFiledFlag!=null && counterFiledFlag.toString().equals("Yes") 
+							&& counterFiledDoc!=null  && !counterFiledDoc.equals("") && counterFiledDocBody != null && counterFiledDocBody.getFormDataContentDisposition().getFileName().equals("")) {
+						
+						newFileName="counter_"+CommonModels.randomTransactionNo()+"."+counterFiledDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/counters/"+newFileName;
+						
+						counterFileUploadPath = "uploads/counters/"+newFileName;
+						
+						writeToFile(counterFiledDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','Uploaded Counter','"+userId+"', '"+remarks+"', '"+counterFileUploadPath+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2 = ", counter_filed_document='"+counterFileUploadPath+"'";
+					}
+					
+					
+					if(paraWiseRemarksFlag!=null && paraWiseRemarksFlag.toString().equals("Yes") 
+							&& paraWiseRemarksDoc!=null  && !paraWiseRemarksDoc.equals("") && paraWiseRemarksDocBody != null && paraWiseRemarksDocBody.getFormDataContentDisposition().getFileName().equals("")) {
+						
+						newFileName="parawiseremarks_"+CommonModels.randomTransactionNo()+"."+paraWiseRemarksDocBody.getMediaType().getSubtype();
+						
+						String uploadedFileLocation = "/app/tomcat9/webapps/apolcms/uploads/parawiseremarks/"+newFileName;
+						
+						pwrFileUploadPath = "uploads/parawiseremarks/"+newFileName;
+						
+						writeToFile(paraWiseRemarksDoc, uploadedFileLocation);
+						
+						
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks, uploaded_doc_path ) "
+								+ "values ('" + cino + "','Uploaded Parawise Remarks','"+userId+"', '"+remarks+"', '"+pwrFileUploadPath+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sqlCondition2 = ", pwr_uploaded_copy='"+pwrFileUploadPath+"'";
+					}
+					
+					
+					if(Integer.parseInt(DatabasePlugin.getSingleValue(con, "select count(*) from ecourts_olcms_case_details where cino='"+cino+"'")) > 0) {
+						
+						sql="insert into ecourts_olcms_case_details_log (cino ,  petition_document   ,    counter_filed_document  ,    judgement_order  , action_taken_order  ,last_updated_by ,  last_updated_on ,  counter_filed , remarks  , "
+								+ "ecourts_case_status ,  corresponding_gp, pwr_uploaded , pwr_submitted_date, pwr_received_date , pwr_approved_gp ,  pwr_gp_approved_date , appeal_filed ,  appeal_filed_copy, appeal_filed_date, pwr_uploaded_copy, "
+								+ " counter_approved_gp ,action_to_perfom, counter_approved_date ,counter_approved_by , respondent_slno, cordered_impl_date , dismissed_copy , final_order_status  ,no_district_updated)"
+								+ " select cino ,  petition_document   ,    counter_filed_document  ,    judgement_order  , action_taken_order  ,last_updated_by ,  last_updated_on ,  counter_filed , remarks  ,"
+								+ "ecourts_case_status ,  corresponding_gp, pwr_uploaded , pwr_submitted_date, pwr_received_date , pwr_approved_gp ,  pwr_gp_approved_date , appeal_filed ,  appeal_filed_copy, appeal_filed_date, pwr_uploaded_copy, "
+								+ " counter_approved_gp ,action_to_perfom, counter_approved_date ,counter_approved_by , respondent_slno, cordered_impl_date , dismissed_copy , final_order_status  ,no_district_updated from ecourts_olcms_case_details where cino='"+cino+"'";
+						
+						DatabasePlugin.executeUpdate(sql, con);
+						
+						sql = "update ecourts_olcms_case_details set ecourts_case_status='"
+								+ ecourtsCaseStatus + "', counter_filed='"
+								+ counterFiledFlag + "', remarks='" + remarks
+								+ "', last_updated_by='" + userId + "', last_updated_on=now() " + sqlCondition2
+								+ ", corresponding_gp='" + "" + "', pwr_uploaded='"
+								+ paraWiseRemarksFlag + "', pwr_submitted_date=to_date('"
+								+ CommonModels.checkStringObject(pwrSubmittedDate)
+								+ "','mm/dd/yyyy'), pwr_received_date=to_date('"
+								+ CommonModels.checkStringObject(pwrReceivedDate) + "','mm/dd/yyyy'),pwr_approved_gp='"
+								+ pwrApprovedGP + "',"
+								+ " pwr_gp_approved_date=to_date('" + CommonModels.checkStringObject(pwrGPApprovedDate)
+								+ "','mm/dd/yyyy'), action_to_perfom='"+actionToPerform  + "' where cino='" + cino + "' and respondent_slno='"+respondentId+"'";
+						
+					}
+					else {
+						
+						sql = "insert into ecourts_olcms_case_details (cino, ecourts_case_status, petition_document, counter_filed_document, last_updated_by, last_updated_on, "
+								+ "counter_filed, remarks,  corresponding_gp, pwr_uploaded, pwr_submitted_date, pwr_received_date, pwr_approved_gp, "
+								+ "pwr_gp_approved_date, pwr_uploaded_copy, action_to_perfom, respondent_slno) "
+								+ " values ('" + cino + "', '" + ecourtsCaseStatus + "', '"
+								+ petitionFileUploadPath + "','" + counterFileUploadPath + "','" + userId + "', now(),'"
+								+ counterFiledFlag+ "', '" + remarks + "', '"
+								+ "" + "', '"
+								+ paraWiseRemarksFlag + "'," 
+								+ " to_date('" + CommonModels.checkStringObject(pwrSubmittedDate) + "','mm/dd/yyyy'), " 
+								+ " to_date('" + CommonModels.checkStringObject(pwrReceivedDate) + "','mm/dd/yyyy'), '"
+								+ pwrApprovedGP + "'," 
+								+ " to_date('" + CommonModels.checkStringObject(pwrGPApprovedDate) + "','mm/dd/yyyy'), '" 
+								+ pwrFileUploadPath + "','"+actionToPerform+"','"+respondentId+"')";
+					
+					}
+					System.out.println("SQL:"+sql);
+					
+					int a = DatabasePlugin.executeUpdate(sql, con);
+					
+					if(roleId!=null && (roleId.equals("4") || roleId.equals("5") || roleId.equals("10"))) {//MLO / NO / Dist-NO
+						sql="update ecourts_gpo_ack_depts set ecourts_case_status='"+ecourtsCaseStatus+"', mlo_no_updated='T' "
+								+ " where ack_no='"+cino+"' and dept_code='"+deptCode+"' and respondent_slno='"+respondentId+"'  ";
+						a += DatabasePlugin.executeUpdate(sql, con);
+					}
+					else {
+						sql="update ecourts_gpo_ack_depts set ecourts_case_status='"+ecourtsCaseStatus+"', section_officer_updated='T' "
+								+ " where ack_no='"+cino+"' and dept_code='"+deptCode+"' and respondent_slno='"+respondentId+"'";
+						a += DatabasePlugin.executeUpdate(sql, con);
+					}
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks ) "
+							+ "values ('" + cino + "','"+actionPerformed+"','"+userId+"', '"+remarks+"')";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+					if (a > 0) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Case details updated successfully\" }}";
+						con.commit();
+					} else {
+						con.rollback();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Error while updating the case details\" }}";
+					}
+					
+				} else if(ecourtsCaseStatus!=null && ecourtsCaseStatus.equals("Private")){
+					
+						int a=0;
+						
+						sql="update ecourts_case_data set ecourts_case_status='"+ecourtsCaseStatus+"', case_status='98' "
+								+ " where cino='"+cino+"' and dept_code='"+deptCode+"'  "; 
+						 a = DatabasePlugin.executeUpdate(sql, con);
+					
+					sql="insert into ecourts_case_activities (cino , action_type , inserted_by , remarks ) "
+							+ "values ('" + cino + "','"+actionPerformed+"','"+userId+"', '"+remarks+"')";
+					a += DatabasePlugin.executeUpdate(sql, con);
+					
+					if (a > 0) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Case details updated successfully\" }}";
+						con.commit();
+					} else {
+						con.rollback();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Error while updating the case details\" }}";
+					}
+					
+				}				
+				
+			}
+			
+			}
+			
+		}	catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	
+	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/forwardCaseDetailsToGP")
+	public static Response forwardCaseDetailsToGP(String incomingData) throws Exception {
+		Connection con = null;
+		String jsonStr = "";
+
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+
+				JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+				System.out.println("jObject:" + jObject);
+
+				if (!jObject.has("USER_ID") || jObject.get("USER_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- USER_ID is missing in the request.\" }}";
+				} else if (!jObject.has("ROLE_ID") || jObject.get("ROLE_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- ROLE_ID is missing in the request.\" }}";
+				} else if (!jObject.has("DEPT_CODE") || jObject.get("DEPT_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DEPT_CODE is missing in the request.\" }}";
+				} else if (!jObject.has("DIST_ID") || jObject.get("DIST_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- DIST_ID is missing in the request.\" }}";
+				}  else if (!jObject.has("ACK_NO") || jObject.get("ACK_NO").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- ACK_NO is missing in the request.\" }}";
+				} else if (!jObject.has("RESPONDENT_ID") || jObject.get("RESPONDENT_ID").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- RESPONDENT_ID is missing in the request.\" }}";
+				}else if (!jObject.has("GP_CODE") || jObject.get("GP_CODE").toString().equals("")) {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Mandatory parameter- GP_CODE is missing in the request.\" }}";
+				} 
+				else {
+					String sql = null, sqlCondition = "", condition="",roleId="", distId="", deptCode="", userId="",cino="",respondentId="";
+					String newStatus = "";
+					int a=0;
+					userId = jObject.get("USER_ID").toString();
+					roleId = jObject.get("ROLE_ID").toString();
+					deptCode = jObject.get("DEPT_CODE").toString();
+					distId = jObject.get("DIST_ID").toString();
+					cino = jObject.get("CINO").toString();
+					respondentId =  jObject.get("RESPONDENT_ID").toString();
+					String fwdOfficer = CommonModels.checkStringObject(jObject.get("GP_CODE").toString());
+					String remarks = "";
+					
+					con = DatabasePlugin.connect();
+					
+					con.setAutoCommit(false);
+					
+					if (jObject.has("REMARKS") && !jObject.get("REMARKS").toString().equals("")
+							&& !jObject.get("REMARKS").toString().equals("0")) {
+						remarks = CommonModels.checkStringObject(jObject.get("REMARKS").toString());
+					}
+					
+					if(roleId!=null && roleId.equals("3")) {//FROM SECT DEPT TO GP.
+						newStatus = "6";
+						sql="update ecourts_gpo_ack_depts set case_status="+newStatus+", assigned_to='"+fwdOfficer+"' where ack_no='"+cino+"' and section_officer_updated='T' and mlo_no_updated='T' and case_status='1' and dept_code='"+deptCode+"'  and respondent_slno='"+respondentId+"'  ";
+						
+					} else if(roleId!=null && roleId.equals("9")) {//FROM HOD TO GP
+						newStatus = "6";						
+						sql="update ecourts_gpo_ack_depts set case_status="+newStatus+", assigned_to='"+fwdOfficer+"' where ack_no='"+cino+"' and section_officer_updated='T' and mlo_no_updated='T' and case_status='3' and dept_code='"+deptCode+"' and respondent_slno='"+respondentId+"'   ";
+						
+					}
+					
+					System.out.println("SQL:"+sql);
+					a = DatabasePlugin.executeUpdate(sql, con);
+					
+					if (a > 0) {
+						sql="insert into ecourts_case_activities (cino , action_type , inserted_by , assigned_to , remarks) "
+								+ " values ('" + cino + "','CASE FORWARDED TO GP', '"+userId+"', '"+fwdOfficer+"', '"+remarks+"')";
+						DatabasePlugin.executeUpdate(sql, con);
+						con.commit();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  ,  \"RSPDESC\" :\"Case successfully forwarded to the selected GP.\" }}";
+					} else {
+						con.rollback();
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error while forwarding the case to the selected GP.\" }}";
+					}			
+
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			con.rollback();
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+
+	}
+	
+	
+	private void writeToFile(InputStream uploadedInputStream, String uploadedFileLocation) {
+
+		try {
+			
+			FileOutputStream out = new FileOutputStream(new File(uploadedFileLocation));
+			byte[] bytes = IOUtils.toByteArray(uploadedInputStream);	
+			out.write(bytes);
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	
 	
