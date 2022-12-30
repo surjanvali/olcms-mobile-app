@@ -487,6 +487,130 @@ public class CaseCategoryUpdationService {
 	
 	
 	
+	@POST
+	@Produces({ "application/json" })
+	@Consumes({ "application/json" })
+	@Path("/displayBillDetailsForCino")
+	public static Response displayBillDetailsForCino(String incomingData) throws Exception {
+		Connection con = null;
+		String jsonStr = "",sql="";
+		PreparedStatement ps = null;
+		try {
+			if (incomingData != null && !incomingData.toString().trim().equals("")) {
+				JSONObject jObject1 = new JSONObject(incomingData);
+
+				System.out.println("jObject1:" + jObject1);
+				if (jObject1.has("REQUEST") && jObject1.get("REQUEST") != null && !jObject1.get("REQUEST").toString().trim().equals("")) {
+
+					JSONObject jObject = new JSONObject(jObject1.get("REQUEST").toString().trim());
+					System.out.println("jObject:" + jObject);
+					
+					if(!jObject.has("CINO") || jObject.get("CINO").toString().equals("")) {
+						jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Mandatory parameter- CINO is missing in the request.\" }}";
+					}
+					
+					else {
+
+					
+					String cIno = jObject.get("CINO").toString();
+					
+					
+					con = DatabasePlugin.connect();
+					
+					
+					if (cIno != null && !cIno.isEmpty() ) {
+						
+						sql =  "select * from ecourts_case_category_wise_data where cino='" + cIno + "'";
+						List<Map<String, Object>> data = DatabasePlugin.executeQuery(sql, con);
+						
+						
+						JSONArray finalList = new JSONArray();
+						JSONObject casesData = new JSONObject();
+						boolean isDataAvailable = false;
+						
+						if (data != null && !data.isEmpty() && data.size() > 0) {
+							
+							for (Map<String, Object> entry : data) {								   
+								JSONObject cases = new JSONObject();
+						    	cases.put("CINO", entry.get("cino"));						    	
+						    	cases.put("FIN_CATEGORY", entry.get("finance_category"));
+						    	cases.put("WORK_NAME", entry.get("work_name"));
+						    	cases.put("EST_COST", entry.get("est_cost"));
+						    	cases.put("ADMIN_SANCTION", entry.get("admin_sanction"));
+						    	cases.put("GRANT", entry.get("grant_val"));
+						    	cases.put("EFILE_NO", entry.get("efile_com_no"));
+						    	cases.put("REMARKS", entry.get("bill_remarks"));
+						    	
+						    	finalList.put(cases);
+							}
+							
+							casesData.put("CASE_DETAILS", finalList);	
+							isDataAvailable = true;
+														
+							}
+						else {
+							casesData.put("CASE_DETAILS", finalList);
+						}
+						
+						
+						sql = "select * from cfms_bill_data_mst where cino='" + cIno + "'";
+						List<Map<String, Object>> cfmsdata = DatabasePlugin.executeQuery(sql, con);
+						
+						JSONArray billsList = new JSONArray();
+						
+						if (cfmsdata != null && !cfmsdata.isEmpty() && cfmsdata.size() > 0) {
+							
+							for (Map<String, Object> entry : cfmsdata) {								   
+								JSONObject cases = new JSONObject();
+						    	cases.put("BILL_ID", entry.get("cfms_bill_id"));						    	
+						    	cases.put("BILL_AMOUNT", entry.get("cfms_bill_amount"));
+						    	cases.put("BILL_STATUS", entry.get("cfms_bill_status"));
+						    	
+						    	billsList.put(cases);
+							}
+							
+							casesData.put("BILL_DETAILS", billsList);	
+							isDataAvailable = true;
+														
+							}
+						else {
+							casesData.put("BILL_DETAILS", billsList);
+						}
+						
+						String finalString = casesData.toString();
+						
+						if(isDataAvailable)
+						
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"Bill details retrieved successfully\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+						else
+							jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"01\"  , \"RSPDESC\" :\"No previous bill details found for the given cino.\"  , "+finalString.substring(1,finalString.length()-1)+"}}";
+						
+						
+					}
+				  } 
+				} else {
+					jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\", \"RSPDESC\" :\"Invalid Data Format.\"}}";
+				}
+			} else {
+				jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"No Input Data.\" }}";
+			}
+		} catch (Exception e) {
+			jsonStr = "{\"RESPONSE\" : {\"RSPCODE\" :\"00\"  ,  \"RSPDESC\" :\"Error:Invalid Data.\" }}";
+			// conn.rollback();
+			e.printStackTrace();
+
+		} finally {
+			if (con != null)
+				con.close();
+			if (ps != null)
+				ps.close();
+		}
+		return Response.status(200).entity(jsonStr).build();
+	}
+	
+	
+	
+	
 	
 	@POST
 	@Produces({ "application/json" })
