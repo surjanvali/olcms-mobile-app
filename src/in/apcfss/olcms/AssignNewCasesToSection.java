@@ -881,7 +881,7 @@ public class AssignNewCasesToSection {
 					roleId = jObject.get("ROLE_ID").toString();
 					deptCode = jObject.get("DEPT_CODE").toString();
 					distId = jObject.get("DIST_ID").toString();
-					cino = jObject.get("CINO").toString();
+					cino = jObject.get("ACK_NO").toString();
 					respondentId =  jObject.get("RESPONDENT_ID").toString();
 					String fwdOfficer = CommonModels.checkStringObject(jObject.get("GP_CODE").toString());
 					String remarks = "";
